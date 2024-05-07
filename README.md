@@ -25,3 +25,36 @@ There are several methods for registering a dependency.
         Functions that accept *RegistrationOption, change the option, and returns error
     )
 ```
+
+## Appendix 1. Registration Options
+
+### Scope
+
+There are four out-of-the-box options for controling the scope.
+
+```golang
+    import o "github.com/pyj4104/GoFac/pkg/Options"
+	option := o.NewRegistrationOption()
+
+    o.PerCall(option)
+    o.PerRequest(option)
+    o.PerScope(option)
+    o.AsSingleton(option)
+```
+
+* PerCall: If registered as PerCall, the object will be created anew whenever it is needed.
+* PerRequest: If registered as PerRequest, the object will be created anew per request for a dependency.
+* PerScope: If registered as PerScope, the object will be created anew per context.
+* AsSingleton: If registered as singleton, the object will be created at the build time.
+
+### Registration Option Usage
+
+```golang
+    container.RegisterConstructor[T interface](
+        container,
+        somePackage.NewStruct(),
+        PerCall, PerRequest, AsSingleton, PerScope
+    )
+```
+
+The last one to be called will be used. (In this case, the dependency will be registered as PerScope)
