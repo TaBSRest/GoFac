@@ -2,7 +2,7 @@
 
 AutoFac (from C#) like open-source Dependency Injection Container. It contains the lifetime management features for dependencies.
 
-# Usage
+## Usage
 
 It follows a simple pattern of creating container, registering dependencies, building the container, and resolving the dependencies. Going back a step is not allowed.
 
@@ -12,11 +12,11 @@ It follows a simple pattern of creating container, registering dependencies, bui
     var container GoFac.Container = GoFac.NewContainer()
 ```
 
-1. Registering Dependencies
+2. Registering Dependencies
 
 There are several methods for registering a dependency.
 
-    * Normal Registration
+  * Normal Registration
 
 ```golang
     container.RegisterConstructor[T interface](
