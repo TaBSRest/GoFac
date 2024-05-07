@@ -34,7 +34,8 @@ There are four out-of-the-box options for controling the scope.
 
 ```golang
     import o "github.com/pyj4104/GoFac/pkg/Options"
-	option := o.NewRegistrationOption()
+
+    option := o.NewRegistrationOption()
 
     o.PerCall(option)
     o.PerRequest(option)
