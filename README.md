@@ -33,9 +33,12 @@ There are several methods for registering a dependency.
 There are four out-of-the-box options for controling the scope.
 
 ```golang
-    import o "github.com/pyj4104/GoFac/pkg/Options"
+    import (
+        o "github.com/pyj4104/GoFac/pkg/Options"
+        ro "github.com/pyj4104/GoFac/internal/RegistrationOption"
+    )
 
-    option := o.NewRegistrationOption()
+    option := ro.NewRegistrationOption()
 
     o.PerCall(option)
     o.PerRequest(option)
