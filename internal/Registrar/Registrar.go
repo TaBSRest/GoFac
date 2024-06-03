@@ -1,6 +1,7 @@
 package registrar
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -8,73 +9,79 @@ import (
 	o "github.com/pyj4104/GoFac/internal/RegistrationOption"
 )
 
-type Registrar struct {
-	factory func(...any)(any, error)
-	typeInfo reflect.Type
-	options o.RegistrationOption
+type Registration struct {
+	Constructor Constructor
+	TypeInfo reflect.Type
+	Options  o.RegistrationOption
 }
 
-func NewRegistrar(
-	typeReflection reflect.Type,
-	factory func(...any)any,
-	ConfigurationFunctions ...func(*o.RegistrationOption) error,
-) (*Registrar, error) {
-	return NewRegistrarWithError(
-		typeReflection,
-		wrapFactory(factory),
-		ConfigurationFunctions...
-	)
+type Constructor struct {
+	Info reflect.Type
+	Call reflect.Value
 }
 
-func NewRegistrarWithError(
-	typeReflection reflect.Type,
-	factory func(...any)(any, error),
+func NewRegistration(
+	constructor interface{},
+	typeInfo reflect.Type,
 	ConfigurationFunctions ...func(*o.RegistrationOption) error,
-) (*Registrar, error) {
-	if typeReflection == nil {
-		return nil, h.MakeError("Registrar.NewRegistrarWithError", "Type Reflection is empty!")
-	}
-	if factory == nil {
-		return nil, h.MakeError("Registrar.NewRegistrarWithError", "Factory is empty!")
+) (*Registration, error) {
+	if err := constructorErrorChecks(constructor, typeInfo); err != nil {
+		return nil, err
 	}
 
 	var options *o.RegistrationOption = o.NewRegistrationOption()
 
-	for _, config := range ConfigurationFunctions {
-		if err := config(options); err != nil {
-			return nil, fmt.Errorf(
-				h.GetErrorMessage(
-					"Registrar.NewRegistrarWithError",
-					fmt.Sprintf(
-						"Error registering %s",
-						h.GetNameFromType(typeReflection),
-					),
-				),
-				err,
-			)
-		}
+	aggregatedErrors := []error{
+		h.MakeError(
+			"Registration.NewRegistration",
+			fmt.Sprintf(
+				"Error registering %s",
+				h.GetNameFromType(typeInfo),
+			),
+		),
 	}
 
-	return &Registrar{
-		factory: factory,
-		typeInfo: typeReflection,
-		options: *options,
+	for _, config := range ConfigurationFunctions {
+		if err := config(options); err != nil {
+			aggregatedErrors = append(aggregatedErrors, err)
+		}
+	}
+	if len(aggregatedErrors) > 1 {
+		return nil, errors.Join(
+			aggregatedErrors...,
+		)
+	}
+
+	return &Registration{
+		Constructor:  Constructor {
+			Info: reflect.TypeOf(constructor),
+			Call: reflect.ValueOf(constructor),
+		},
+		TypeInfo: typeInfo,
+		Options:  *options,
 	}, nil
 }
 
-func wrapFactory(
-	runOriginalFactory func(...any)any,
-) func(...any)(any, error) {
-	return func(args ...any)(any, error) {
-		var err error = nil
-		defer func() {
-			if r := recover().(error); r != nil {
-				err = r
-			}
-		}()
-
-		val := runOriginalFactory()
-
-		return val, err
+func constructorErrorChecks(
+	constructor interface{},
+	typeInfo reflect.Type,
+) (error) {
+	constructorTypeInfo := reflect.TypeOf(constructor)
+	if constructor == nil {
+		return h.MakeError("Registration.NewRegistration", "Constructor is nil!")
 	}
+	if constructorTypeInfo.Kind() != reflect.Func {
+		return h.MakeError("Registration.NewRegistration", "Constructor is not a function!")
+	}
+	if typeInfo == nil {
+		return h.MakeError("Registration.NewRegistration", "TypeInfo is nil!")
+	}
+	if constructorTypeInfo.NumOut() < 1 {
+		return h.MakeError("Registration.NewRegistration", "Constructor must return something!")
+	}
+	if constructorTypeInfo.Out(0) != typeInfo {
+		return h.MakeError("Registration.NewRegistration", "Constructor's first return value must be of the same typeInfo!")
+	}
+
+	return nil
 }

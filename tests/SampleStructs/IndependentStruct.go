@@ -8,15 +8,15 @@ type IIndependentStruct interface {
 
 type IndependentStruct struct {}
 
-func NewA() *IndependentStruct {
+func NewA() IIndependentStruct {
 	return &IndependentStruct{}
 }
 
-func NewAWithErr() (*IndependentStruct, error) {
+func NewAWithErr() (IIndependentStruct, error) {
 	return &IndependentStruct{}, nil
 }
 
-func NewAReturningError() (*IndependentStruct, error) {
+func NewAReturningError() (IIndependentStruct, error) {
 	return nil, errors.New("IndependentStruct: Error Forming IndependentStruct!")
 }
 
