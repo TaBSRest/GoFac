@@ -44,7 +44,9 @@ func RegisterConstructor[T interface{}](
 	return nil
 }
 
-func Resolve[T interface{}](container *Container) (*T, error) {
+func Resolve[T interface{}](container *Container) (T, error) {
+	var base T
+
 	tInfo := reflect.TypeFor[T]()
 	if isArrayOrSlice(tInfo) {
 		tInfo = tInfo.Elem()
@@ -52,15 +54,25 @@ func Resolve[T interface{}](container *Container) (*T, error) {
 
 	dependency, err := resolveOne(container, tInfo)
 	if err != nil {
-		return nil, err
+		return base, err
 	}
 
 	dependencyT, ok := (*dependency).Interface().(T)
 	if !ok {
-		return nil, h.MakeError("GoFac.Resolve", "Could not cast to the given type! Please check the registration!")
+		return base, h.MakeError("GoFac.Resolve", "Could not cast to the given type! Please check the registration!")
 	}
 
-	return &dependencyT, nil
+	return dependencyT, nil
+}
+
+func resolve(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
+	if isArrayOrSlice(tInfo) {
+		tmpResolution, err := resolveMultiple(container, tInfo.Elem())
+		resolution := reflect.ValueOf(tmpResolution)
+		return &resolution, err
+	} else {
+		return resolveOne(container, tInfo)
+	}
 }
 
 func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
@@ -77,32 +89,22 @@ func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error
 		return nil, err
 	}
 
-	return resolveConstructor(constructor, name, *dependencies)
+	return resolveConstructor(constructor, name, dependencies)
 }
 
-/*
-func resolveMany(container *Container, tInfos reflect.Type) ([]*reflect.Value, error) {
-	tInfo := tInfos.Elem()
-	if isArrayOrSlice(tInfos.Elem()) {
-		// TODO: return error for now...
-		return nil, h.MakeError("GoFac.resolveMany", "Arry of arry dependencies are not supported yet!")
-	}
-	tName := h.GetNameFromType(tInfo)
-	for i, constructor := range container.cache[tName] {
-		dependencies := make([]reflect.Value, constructor.Info.NumIn())
-	}
+func resolveMultiple(container *Container, tInfo reflect.Type) ([]*reflect.Value, error) {
 	return nil, nil
 }
-*/
+
 
 //dependenciesOfDependency := *instancesToValue(resolveds)
 //dependency := registration.Constructor.Call.Call(dependenciesOfDependency)
 
-func getDependencies(container *Container, originalConstructorName string, constructor r.Constructor) (*[]reflect.Value, error) {
-	dependencies := make([]reflect.Value, constructor.Info.NumIn())
+func getDependencies(container *Container, originalConstructorName string, constructor r.Constructor) ([]*reflect.Value, error) {
+	dependencies := make([]*reflect.Value, constructor.Info.NumIn())
 	for i := 0; i < constructor.Info.NumIn(); i++ {
 		dependencyInfo := constructor.Info.In(i)
-		dependency, err := resolveOne(container, dependencyInfo)
+		dependency, err := resolve(container, dependencyInfo)
 		if err != nil {
 			return nil, errors.Join(
 				h.MakeError(
@@ -112,13 +114,14 @@ func getDependencies(container *Container, originalConstructorName string, const
 				err,
 			)
 		}
-		dependencies[i] = *dependency
+
+		dependencies[i] = dependency
 	}
-	return &dependencies, nil
+	return dependencies, nil
 }
 
-func resolveConstructor(constructor r.Constructor, name string, dependencies []reflect.Value) (*reflect.Value, error) {
-	value := constructor.Call.Call(dependencies)
+func resolveConstructor(constructor r.Constructor, name string, dependencies []*reflect.Value) (*reflect.Value, error) {
+	value := constructor.Call.Call(dereferencePointedArr(dependencies))
 	if constructor.Info.NumOut() == 2 && !value[1].IsNil() {
 		fmt.Println(value[1].Interface().(error))
 		return nil, errors.Join(
@@ -134,4 +137,12 @@ func resolveConstructor(constructor r.Constructor, name string, dependencies []r
 
 func isArrayOrSlice(info reflect.Type) bool {
 	return info.Kind() == reflect.Slice || info.Kind() == reflect.Array
+}
+
+func dereferencePointedArr(pointedArr []*reflect.Value) ([]reflect.Value) {
+	arr := make([]reflect.Value, len(pointedArr))
+	for i, val := range pointedArr {
+		arr[i] = *val
+	}
+	return arr
 }

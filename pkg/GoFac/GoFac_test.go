@@ -39,9 +39,7 @@ func TestContainer_AbleToResolveSimpleObject(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			resultTmp, errTmp := Resolve[ss.IIndependentStruct](container)
-			result = *resultTmp
-			err = errTmp
+			result, err = Resolve[ss.IIndependentStruct](container)
 		}, 
 		"Should not have paniced when resolving interface!",
 	)
@@ -65,7 +63,7 @@ func TestContainer_CannotResolve_ConstructorThrowsError(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	var result *ss.IIndependentStruct
+	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
 			result, err = Resolve[ss.IIndependentStruct](container)
@@ -108,9 +106,7 @@ func TestContainer_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			resultTmp, errTmp := Resolve[ss.IStructRelyingOnIndependentStruct](container)
-			result = *resultTmp
-			err = errTmp
+			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
 		}, 
 		"Should not have paniced when resolving interface!",
 	)
@@ -141,7 +137,7 @@ func TestContainer_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNo
 	}
 	assert.Nil(err, "No Error should have happened when registering!" + errorMsg)
 
-	var result *ss.IStructRelyingOnIndependentStruct
+	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
 			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
