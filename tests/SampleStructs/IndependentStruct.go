@@ -3,7 +3,7 @@ package samplestructs
 import "errors"
 
 type IIndependentStruct interface {
-	VoidFuncA()
+	ReturnNameIndependentStruct() string
 }
 
 type IndependentStruct struct {}
@@ -20,4 +20,6 @@ func NewAReturningError() (IIndependentStruct, error) {
 	return nil, errors.New("IndependentStruct: Error Forming IndependentStruct!")
 }
 
-func (i *IndependentStruct) VoidFuncA() { }
+func (i *IndependentStruct) ReturnNameIndependentStruct() string {
+	return "IndependentStruct"
+}

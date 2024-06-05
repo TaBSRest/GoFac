@@ -37,9 +37,6 @@ func TestContainer_AbleToResolveSimpleObject(t *testing.T) {
 	assert.Nil(err, "No Error should have happened when registering")
 
 	var result ss.IIndependentStruct
-	resultTmp, errTmp := Resolve[ss.IIndependentStruct](container)
-	result = *resultTmp
-	err = errTmp
 	assert.NotPanics(
 		func() {
 			resultTmp, errTmp := Resolve[ss.IIndependentStruct](container)
@@ -51,4 +48,42 @@ func TestContainer_AbleToResolveSimpleObject(t *testing.T) {
 
 	assert.NotNil(result, "Resolved object should not be nil!")
 	assert.Nil(err, "Should not have any error!")
+	assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct(), "Functions should be able to run")
+}
+
+func TestContainer_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) {
+	assert := assert.New(t)
+
+	container := NewContainer()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = RegisterConstructor[ss.IIndependentStruct](container, ss.NewA)
+			err = RegisterConstructor[ss.IStructRelyingOnIndependentStruct](
+				container,
+				ss.NewStructRelyingOnIndependentStruct,
+			)
+		}, 
+		"Should not have paniced when registering a constructor!",
+	)
+
+	errorMsg := ""
+	if err != nil {
+		errorMsg = err.Error()
+	}
+	assert.Nil(err, "No Error should have happened when registering!" + errorMsg)
+
+	var result ss.IStructRelyingOnIndependentStruct
+	assert.NotPanics(
+		func() {
+			resultTmp, errTmp := Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result = *resultTmp
+			err = errTmp
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result, "Resolved object should not be nil!")
+	assert.Nil(err, "Should not have any error!")
+	assert.Equal("StructRelyingOnIndependentStruct", result.ReturnNameStructRelyingOnIndependentStruct(), "Functions should be able to run")
 }

@@ -10,6 +10,7 @@ import (
 
 	o "github.com/pyj4104/GoFac/internal/RegistrationOption"
 	s "github.com/pyj4104/GoFac/internal/Scope"
+	samplestructs "github.com/pyj4104/GoFac/tests/SampleStructs"
 	ss "github.com/pyj4104/GoFac/tests/SampleStructs"
 )
 
@@ -38,9 +39,15 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 			configFuncs:    nil,
 			msg:            "Registration.NewRegistration: TypeInfo is nil!",
 		},
+		"TypeReflection is not interface": {
+			factory:        func(...any) (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
+			typeReflection: reflect.TypeOf(samplestructs.IndependentStruct{}),
+			configFuncs:    nil,
+			msg:            "Registration.NewRegistration: Must register interface!",
+		},
 		"TypeInfo and Constructor mismatch!": {
-			factory:        func(...any) (any, error) { return nil, nil },
-			typeReflection: reflect.TypeFor[int](),
+			factory:        func(...any) (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
+			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error {
 					return errors.New("Error!")
@@ -49,29 +56,29 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 			msg: "Registration.NewRegistration: Constructor's first return value must be of the same typeInfo!",
 		},
 		"Configuration Function Returns Error": {
-			factory:        func(...any) (int, error) { return 1, nil },
-			typeReflection: reflect.TypeFor[int](),
+			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
+			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering /int\nError!",
+			msg: "Registration.NewRegistration: Error registering github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
 		},
 		"One of Many Configuration Functions Returns Error": {
-			factory:        func(...any) (int, error) { return 1, nil },
-			typeReflection: reflect.TypeFor[int](),
+			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
+			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error { return nil },
 				func(*o.RegistrationOption) error {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering /int\nError!",
+			msg: "Registration.NewRegistration: Error registering github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
 		},
 		"Many Configuration Functions Returns Error": {
-			factory:        func(...any) (int, error) { return 1, nil },
-			typeReflection: reflect.TypeFor[int](),
+			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
+			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error {
 					return errors.New("Error1!")
@@ -81,7 +88,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error2!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering /int\nError1!\nError2!",
+			msg: "Registration.NewRegistration: Error registering github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct\nError1!\nError2!",
 		},
 	}
 

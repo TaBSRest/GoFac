@@ -73,11 +73,14 @@ func constructorErrorChecks(
 	if constructorTypeInfo.Kind() != reflect.Func {
 		return h.MakeError("Registration.NewRegistration", "Constructor is not a function!")
 	}
+	if constructorTypeInfo.NumOut() < 1 {
+		return h.MakeError("Registration.NewRegistration", "Constructor must return something!")
+	}
 	if typeInfo == nil {
 		return h.MakeError("Registration.NewRegistration", "TypeInfo is nil!")
 	}
-	if constructorTypeInfo.NumOut() < 1 {
-		return h.MakeError("Registration.NewRegistration", "Constructor must return something!")
+	if typeInfo.Kind() != reflect.Interface {
+		return h.MakeError("Registration.NewRegistration", "Must register interface!")
 	}
 	if constructorTypeInfo.Out(0) != typeInfo {
 		return h.MakeError("Registration.NewRegistration", "Constructor's first return value must be of the same typeInfo!")

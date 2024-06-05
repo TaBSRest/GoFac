@@ -15,7 +15,7 @@ type Container struct {
 }
 
 func NewContainer() *Container {
-	return &Container {
+	return &Container{
 		cache: make(map[string][]*r.Registration),
 	}
 }
@@ -44,15 +44,18 @@ func RegisterConstructor[T interface{}](
 	return nil
 }
 
-func Resolve[T interface{}|[]interface{}](container *Container) (*T, error) {
+func Resolve[T interface{}](container *Container) (*T, error) {
 	tInfo := reflect.TypeFor[T]()
-	dependency, err := resolveOne(container, tInfo)
-	dependencyT, ok := (*dependency).Interface().(T)
+	if isArrayOrSlice(tInfo) {
+		tInfo = tInfo.Elem()
+	}
 
+	dependency, err := resolveOne(container, tInfo)
 	if err != nil {
 		return nil, err
 	}
 
+	dependencyT, ok := (*dependency).Interface().(T)
 	if !ok {
 		return nil, h.MakeError("GoFac.Resolve", "Could not cast to the given type! Please check the registration!")
 	}
@@ -69,40 +72,59 @@ func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error
 	registration := registrations[len(registrations)-1]
 
 	constructor := registration.Constructor
-	dependencies := make([]reflect.Value, registration.Constructor.Info.NumIn())
-	for i := 0; i < constructor.Info.NumIn(); i++ {
-		dependencyInfo := constructor.Info.In(i)
-		if isArrayOrSlice(dependencyInfo) {
-			// TODO
-		} else {
-			dependency, err := resolveOne(container, dependencyInfo)
-			if err != nil {
-				return nil, errors.Join(
-					h.MakeError(
-						"GoFac.Resolve", 
-						"Could not resolve" + h.GetNameFromType(tInfo),
-					),
-					err,
-				)
-			}
-			dependencies[i] = *dependency
-		}
+	dependencies, err := getDependencies(container, name, constructor)
+	if err != nil {
+		return nil, err
 	}
 
-	value := constructor.Call.Call(dependencies)
-	if constructor.Info.NumOut() == 2 && !value[1].IsNil() {
-		return nil, value[1].Interface().(error)
-	}
-	
-	return &value[0], nil
+	return resolveConstructor(constructor, *dependencies)
 }
 
-func resolveMany(container *Container, tInfo reflect.Type) ([]*reflect.Value, error) {
+/*
+func resolveMany(container *Container, tInfos reflect.Type) ([]*reflect.Value, error) {
+	tInfo := tInfos.Elem()
+	if isArrayOrSlice(tInfos.Elem()) {
+		// TODO: return error for now...
+		return nil, h.MakeError("GoFac.resolveMany", "Arry of arry dependencies are not supported yet!")
+	}
+	tName := h.GetNameFromType(tInfo)
+	for i, constructor := range container.cache[tName] {
+		dependencies := make([]reflect.Value, constructor.Info.NumIn())
+	}
 	return nil, nil
 }
+*/
 
-		//dependenciesOfDependency := *instancesToValue(resolveds)
-		//dependency := registration.Constructor.Call.Call(dependenciesOfDependency)
+//dependenciesOfDependency := *instancesToValue(resolveds)
+//dependency := registration.Constructor.Call.Call(dependenciesOfDependency)
+
+func getDependencies(container *Container, originalConstructorName string, constructor r.Constructor) (*[]reflect.Value, error) {
+	dependencies := make([]reflect.Value, constructor.Info.NumIn())
+	for i := 0; i < constructor.Info.NumIn(); i++ {
+		dependencyInfo := constructor.Info.In(i)
+		dependency, err := resolveOne(container, dependencyInfo)
+		if err != nil {
+			return nil, errors.Join(
+				h.MakeError(
+					"GoFac.Resolve",
+					"Could not resolve"+originalConstructorName,
+				),
+				err,
+			)
+		}
+		dependencies[i] = *dependency
+	}
+	return &dependencies, nil
+}
+
+func resolveConstructor(constructor r.Constructor, dependencies []reflect.Value) (*reflect.Value, error) {
+	value := constructor.Call.Call(dependencies)
+	if constructor.Info.NumOut() == 2 && !value[1].IsNil() {
+		fmt.Println(value[1].Interface().(error))
+		return nil, value[1].Interface().(error)
+	}
+	return &value[0], nil
+}
 
 func isArrayOrSlice(info reflect.Type) bool {
 	return info.Kind() == reflect.Slice || info.Kind() == reflect.Array
