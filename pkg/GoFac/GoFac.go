@@ -28,7 +28,7 @@ func RegisterConstructor[T interface{}](
 	registrar, err := r.NewRegistration(factory, reflect.TypeFor[T](), configFunctions...)
 	if err != nil {
 		return errors.Join(
-			h.MakeError("GoFac.RegisterConstructor", "Could not register T"),
+			h.MakeError("GoFac.RegisterConstructor", "Could not register T:"),
 			err,
 		)
 	}
@@ -77,7 +77,7 @@ func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error
 		return nil, err
 	}
 
-	return resolveConstructor(constructor, *dependencies)
+	return resolveConstructor(constructor, name, *dependencies)
 }
 
 /*
@@ -107,7 +107,7 @@ func getDependencies(container *Container, originalConstructorName string, const
 			return nil, errors.Join(
 				h.MakeError(
 					"GoFac.Resolve",
-					"Could not resolve"+originalConstructorName,
+					"Could not resolve "+originalConstructorName+":",
 				),
 				err,
 			)
@@ -117,11 +117,17 @@ func getDependencies(container *Container, originalConstructorName string, const
 	return &dependencies, nil
 }
 
-func resolveConstructor(constructor r.Constructor, dependencies []reflect.Value) (*reflect.Value, error) {
+func resolveConstructor(constructor r.Constructor, name string, dependencies []reflect.Value) (*reflect.Value, error) {
 	value := constructor.Call.Call(dependencies)
 	if constructor.Info.NumOut() == 2 && !value[1].IsNil() {
 		fmt.Println(value[1].Interface().(error))
-		return nil, value[1].Interface().(error)
+		return nil, errors.Join(
+			h.MakeError(
+				"GoFac.Resolve",
+				"Constructor of "+name+" threw an error:",
+			),
+			value[1].Interface().(error),
+		)
 	}
 	return &value[0], nil
 }
