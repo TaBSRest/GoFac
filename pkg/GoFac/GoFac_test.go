@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	ss "github.com/pyj4104/GoFac/tests/SampleStructs"
+	ss "github.com/TaBS/GoFac/tests/SampleStructs"
 )
 
 func TestContainer_Constructor_InitializedProperly(t *testing.T) {
@@ -74,7 +74,7 @@ func TestContainer_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	assert.Nil(result, "Resolved object should not be nil!")
 	assert.NotNil(err, "Should not have any error!")
 	assert.Equal(
-		`GoFac.Resolve: Constructor of github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct threw an error:
+		`GoFac.Resolve: Constructor of github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct threw an error:
 IndependentStruct: Error Forming IndependentStruct!`,
 		err.Error(),
 		"Error must show that constructor threw an error",
@@ -148,8 +148,8 @@ func TestContainer_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNo
 	assert.Nil(result, "Resolved object should not be nil!")
 	assert.NotNil(err, "Should not have any error!")
 	assert.Equal(
-		`GoFac.Resolve: Could not resolve github.com/pyj4104/GoFac/tests/SampleStructs/IStructRelyingOnIndependentStruct:
-GoFac.Resolve: github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct is not registered!`,
+		`GoFac.Resolve: Could not resolve github.com/TaBS/GoFac/tests/SampleStructs/IStructRelyingOnIndependentStruct:
+GoFac.Resolve: github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct is not registered!`,
 		err.Error(),
 		"Resolve must specify the cause of failure",
 	)

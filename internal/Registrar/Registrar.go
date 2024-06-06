@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	h "github.com/pyj4104/GoFac/internal/Helpers"
-	o "github.com/pyj4104/GoFac/internal/RegistrationOption"
+	h "github.com/TaBS/GoFac/internal/Helpers"
+	o "github.com/TaBS/GoFac/internal/RegistrationOption"
 )
 
 type Registration struct {

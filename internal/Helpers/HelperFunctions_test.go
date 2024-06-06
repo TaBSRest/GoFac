@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	ss "github.com/pyj4104/GoFac/tests/SampleStructs"
+	ss "github.com/TaBS/GoFac/tests/SampleStructs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +21,7 @@ func Test_GetName_CreatesNameWithPackageName(t *testing.T) {
 		"Interface name should not be empty",
 	)
 	assert.Equal(
-		"github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct",
+		"github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct",
 		interfaceName,
 		"Interface name must match",
 	)
@@ -40,7 +40,7 @@ func Test_GetNameFromType_CreatesNameWithPackageName(t *testing.T) {
 		"Interface name should not be empty",
 	)
 	assert.Equal(
-		"github.com/pyj4104/GoFac/tests/SampleStructs/IIndependentStruct",
+		"github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct",
 		interfaceName,
 		"Interface name must match",
 	)

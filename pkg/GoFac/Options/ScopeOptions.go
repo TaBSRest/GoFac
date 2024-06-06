@@ -1,8 +1,8 @@
 package options
 
 import (
-	o "github.com/pyj4104/GoFac/internal/RegistrationOption"
-	s "github.com/pyj4104/GoFac/internal/Scope"
+	o "github.com/TaBS/GoFac/internal/RegistrationOption"
+	s "github.com/TaBS/GoFac/internal/Scope"
 )
 
 func PerCall(option *o.RegistrationOption) error {
