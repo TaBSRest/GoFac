@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	h "github.com/pyj4104/GoFac/internal/Helpers"
-	r "github.com/pyj4104/GoFac/internal/Registrar"
-	o "github.com/pyj4104/GoFac/internal/RegistrationOption"
+	h "github.com/TaBS/GoFac/internal/Helpers"
+	r "github.com/TaBS/GoFac/internal/Registrar"
+	o "github.com/TaBS/GoFac/internal/RegistrationOption"
 )
 
 type Container struct {

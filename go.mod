@@ -1,4 +1,4 @@
-module github.com/pyj4104/GoFac
+module github.com/TaBS/GoFac
 
 go 1.22.0
 
