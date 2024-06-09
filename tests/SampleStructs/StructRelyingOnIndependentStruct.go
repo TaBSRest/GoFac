@@ -1,9 +1,5 @@
 package samplestructs
 
-type IStructRelyingOnIndependentStruct interface {
-	ReturnNameStructRelyingOnIndependentStruct() string
-}
-
 type StructRelyingOnIndependentStruct struct {
 	dependency IIndependentStruct
 }

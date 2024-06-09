@@ -2,10 +2,6 @@ package samplestructs
 
 import "errors"
 
-type IIndependentStruct interface {
-	ReturnNameIndependentStruct() string
-}
-
 type IndependentStruct struct {}
 
 func NewA() IIndependentStruct {

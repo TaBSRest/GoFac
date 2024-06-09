@@ -53,7 +53,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Constructor's first return value must be of the same typeInfo!",
+			msg: "Registration.NewRegistration: Constructor's first return value must be castible to the typeInfo!",
 		},
 		"Configuration Function Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },

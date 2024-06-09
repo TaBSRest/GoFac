@@ -82,8 +82,8 @@ func constructorErrorChecks(
 	if typeInfo.Kind() != reflect.Interface {
 		return h.MakeError("Registration.NewRegistration", "Must register interface!")
 	}
-	if constructorTypeInfo.Out(0) != typeInfo {
-		return h.MakeError("Registration.NewRegistration", "Constructor's first return value must be of the same typeInfo!")
+	if !constructorTypeInfo.Out(0).ConvertibleTo(typeInfo) {
+		return h.MakeError("Registration.NewRegistration", "Constructor's first return value must be castible to the typeInfo!")
 	}
 
 	return nil
