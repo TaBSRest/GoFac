@@ -1,0 +1,75 @@
+= Setting Up Your Workspace
+
+:toc: left
+
+== Introduction
+
+This document provides instructions on how to set up your development workspace on both macOS and Windows. Follow the steps in the section that corresponds to your operating system.
+
+== macOS Setup
+
+=== Step 1: Install Golang
+
+Go is a simple and fast programming language, developed in Google.
+
+Download and install Golang from the official website: https://go.dev/dl/
+
+To check installation and version (1.22.0), type:
+
+## [source, terminal]
+
+## go -version
+
+=== Step 2: Install Go Mockery Package
+
+To operate GoFac, you need to download Mockery Package from this website: https://pkg.go.dev/github.com/vektra/mockery/v3
+
+=== Step 3: Clone Repositories
+
+Each repository should be cloned _development_ branch.
+
+You can copy and paste it from the repository and type:
+
+## [source, terminal]
+
+## git clone -b "branch name" "Git URL"
+
+== Windows Setup
+
+=== Step 1: Install WSL
+
+Windows Subsystem for Linux is a feature of Microsoft Windows that allows developers to run a Linux environment without the need for a separate virtual machine or dual booting.
+
+Linux server is required to compile Go and other programming languages such as C++.
+
+You can download it with this command in cmd/PowerShell:
+
+## [source, cmd]
+
+## wsl --install
+
+=== Step 2: Install Golang in WSL
+
+Run the following command in Command Prompt:
+
+## [source, cmd]
+
+wget https://dl.google.com/go/go1.22.0.linux-amd64.tar.gz
+sudo tar -xvf go1.22.0.linux-amd64.tar.gz
+sudo mv go /usr/local
+
+---
+
+Further information, visit https://dev.to/deadwin19/how-to-install-golang-on-wslwsl2-2880
+
+=== Test GoFac
+Once complete the installation, check if it is working with this command:
+[source, cmd]
+
+---
+
+## make test
+
+== Conclusion
+
+Follow the instructions for your operating system to set up your development workspace. Once completed, you'll be ready to start working on your projects efficiently.
