@@ -1,23 +1,19 @@
-package registrar
+package Registration
 
 import (
 	"errors"
 	"fmt"
 	"reflect"
 
+	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 )
 
 type Registration struct {
-	Constructor Constructor
+	Construction c.Construction
 	TypeInfo reflect.Type
 	Options  o.RegistrationOption
-}
-
-type Constructor struct {
-	Info reflect.Type
-	Call reflect.Value
 }
 
 func NewRegistration(
@@ -52,11 +48,13 @@ func NewRegistration(
 		)
 	}
 
+	construction, err := c.NewConstruction(reflect.TypeOf(constructor), reflect.ValueOf(constructor))
+	if err != nil {
+		errors.Join(h.MakeError("Registrar.NewRegistration", "Error while registering!"), err)
+	}
+
 	return &Registration{
-		Constructor:  Constructor {
-			Info: reflect.TypeOf(constructor),
-			Call: reflect.ValueOf(constructor),
-		},
+		Construction: construction,
 		TypeInfo: typeInfo,
 		Options:  *options,
 	}, nil
