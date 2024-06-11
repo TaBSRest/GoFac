@@ -4,11 +4,16 @@ type IIndependentStruct interface {
 	ReturnNameIndependentStruct() string
 }
 
-type IStructRelyingOnIndependentStruct interface {
+type IStructRelyingOnIndependentStructBase interface {
 	ReturnNameStructRelyingOnIndependentStruct() string
 }
 
+type IStructRelyingOnIndependentStruct interface {
+	IStructRelyingOnIndependentStructBase
+	ReturnSubStructName() string
+}
+
 type IStructRelyingOnIndependentStructs interface {
-	IStructRelyingOnIndependentStruct
+	IStructRelyingOnIndependentStructBase
 	ReturnSubStructNames() []string
 }

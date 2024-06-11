@@ -13,3 +13,7 @@ func NewStructRelyingOnIndependentStruct(dependency IIndependentStruct) IStructR
 func (i *StructRelyingOnIndependentStruct) ReturnNameStructRelyingOnIndependentStruct() string {
 	return "StructRelyingOnIndependentStruct"
 }
+
+func (i *StructRelyingOnIndependentStruct) ReturnSubStructName() string {
+	return i.dependency.ReturnNameIndependentStruct()
+}
