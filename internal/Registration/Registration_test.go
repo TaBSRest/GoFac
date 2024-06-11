@@ -1,4 +1,4 @@
-package registrar
+package Registration
 
 import (
 	"errors"
@@ -174,7 +174,7 @@ func TestRegistration_NewRegistration_RegistersCorrectly(t *testing.T) {
 			// Direct func comparison is not supported in Go. However, we can still compare the names
 			assert.Equal(
 				runtime.FuncForPC(reflect.ValueOf(test.factory).Pointer()).Name(),
-				runtime.FuncForPC(val.Constructor.Call.Pointer()).Name(),
+				runtime.FuncForPC(val.Construction.Value.Pointer()).Name(),
 				"Constructor must be the same!",
 			)
 			assert.Equal(test.expectedScope, val.Options.Scope, "Scope must be the same!")

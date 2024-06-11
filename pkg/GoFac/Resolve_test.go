@@ -1,4 +1,4 @@
-package gofac
+package GoFac
 
 import (
 	"testing"
@@ -8,33 +8,22 @@ import (
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
 
-func TestContainer_Constructor_InitializedProperly(t *testing.T) {
-	assert := assert.New(t)
-
-	var gofac *Container
-	assert.NotPanics(
-		func() {
-			gofac = NewContainer()
-		},
-		"Should not panic when creating new container",
-	)
-	assert.NotNil(gofac, "Initialized container should not be nil")
-	assert.NotNil(gofac.cache, "The container's cache should not be nil")
-}
 
 func TestContainer_AbleToResolveSimpleObject(t *testing.T) {
 	assert := assert.New(t)
 
-	container := NewContainer()
+	containerBuilder := NewContainerBuilder()
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor[ss.IIndependentStruct](container, ss.NewA)
+			err = RegisterConstructor[ss.IIndependentStruct](containerBuilder, ss.NewA)
 		}, 
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
+
+	container := containerBuilder.Build()
 
 	var result ss.IIndependentStruct
 	assert.NotPanics(
@@ -52,16 +41,18 @@ func TestContainer_AbleToResolveSimpleObject(t *testing.T) {
 func TestContainer_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	assert := assert.New(t)
 
-	container := NewContainer()
+	containerBuilder := NewContainerBuilder()
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor[ss.IIndependentStruct](container, ss.NewAReturningError)
+			err = RegisterConstructor[ss.IIndependentStruct](containerBuilder, ss.NewAReturningError)
 		}, 
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
+
+	container := containerBuilder.Build()
 
 	var result ss.IIndependentStruct
 	assert.NotPanics(
@@ -84,13 +75,13 @@ IndependentStruct: Error Forming IndependentStruct!`,
 func TestContainer_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) {
 	assert := assert.New(t)
 
-	container := NewContainer()
+	containerBuilder := NewContainerBuilder()
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor[ss.IIndependentStruct](container, ss.NewA)
+			err = RegisterConstructor[ss.IIndependentStruct](containerBuilder, ss.NewA)
 			err = RegisterConstructor[ss.IStructRelyingOnIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewStructRelyingOnIndependentStruct,
 			)
 		}, 
@@ -102,6 +93,8 @@ func TestContainer_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T
 		errorMsg = err.Error()
 	}
 	assert.Nil(err, "No Error should have happened when registering!" + errorMsg)
+
+	container := containerBuilder.Build()
 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
@@ -119,12 +112,12 @@ func TestContainer_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T
 func TestContainer_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotRegistered(t *testing.T) {
 	assert := assert.New(t)
 
-	container := NewContainer()
+	containerBuilder := NewContainerBuilder()
 	var err error
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor[ss.IStructRelyingOnIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewStructRelyingOnIndependentStruct,
 			)
 		}, 
@@ -136,6 +129,8 @@ func TestContainer_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNo
 		errorMsg = err.Error()
 	}
 	assert.Nil(err, "No Error should have happened when registering!" + errorMsg)
+
+	container := containerBuilder.Build()
 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
@@ -158,20 +153,20 @@ GoFac.Resolve: github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct 
 func TestContainer_Resolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T) {
 	assert := assert.New(t)
 
-	container := NewContainer()
+	containerBuilder := NewContainerBuilder()
 	var err error
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor[ss.IIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewA,
 			)
 			err = RegisterConstructor[ss.IIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewB,
 			)
 			err = RegisterConstructor[ss.IStructRelyingOnIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewStructRelyingOnIndependentStructs,
 			)
 		}, 
@@ -183,6 +178,8 @@ func TestContainer_Resolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T
 		errorMsg = err.Error()
 	}
 	assert.Nil(err, "No Error should have happened when registering!" + errorMsg)
+
+	container := containerBuilder.Build()
 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
@@ -202,16 +199,16 @@ func TestContainer_Resolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T
 func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 	assert := assert.New(t)
 
-	container := NewContainer()
+	containerBuilder := NewContainerBuilder()
 	var err error
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor[ss.IIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewA,
 			)
 			err = RegisterConstructor[ss.IIndependentStruct](
-				container,
+				containerBuilder,
 				ss.NewB,
 			)
 		}, 
@@ -223,6 +220,8 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 		errorMsg = err.Error()
 	}
 	assert.Nil(err, "No Error should have happened when registering!" + errorMsg)
+
+	container := containerBuilder.Build()
 
 	var result []ss.IIndependentStruct
 	assert.NotPanics(
