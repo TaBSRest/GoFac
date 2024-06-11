@@ -1,6 +1,10 @@
 package GoFac
 
-import r "github.com/TaBSRest/GoFac/internal/Registration"
+import (
+	"reflect"
+
+	r "github.com/TaBSRest/GoFac/internal/Registration"
+)
 
 type ContainerBuilder struct {
 	built bool
@@ -24,8 +28,10 @@ func (cb *ContainerBuilder) GetRegistrations(name string) ([]r.Registration, boo
 }
 
 func (cb *ContainerBuilder) Build() *Container {
+	singletonCache := make(map[string]*reflect.Value)
 	return &Container {
 		cb,
+		singletonCache,
 	}
 }
 
