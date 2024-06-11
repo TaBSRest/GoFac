@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	h "github.com/TaBS/GoFac/internal/Helpers"
-	o "github.com/TaBS/GoFac/internal/RegistrationOption"
+	h "github.com/TaBSRest/GoFac/internal/Helpers"
+	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 )
 
 type Registration struct {
