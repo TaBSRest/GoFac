@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	o "github.com/TaBSRest/GoFac/pkg/GoFac/Options"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
 
@@ -36,6 +37,94 @@ func TestContainer_AbleToResolveSimpleObject(t *testing.T) {
 	assert.NotNil(result, "Resolved object should not be nil!")
 	assert.Nil(err, "Should not have any error!")
 	assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct(), "Functions should be able to run")
+}
+
+func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingleton(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := NewContainerBuilder()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = RegisterConstructor[ss.IIndependentStruct](containerBuilder, ss.NewS)
+		}, 
+		"Should not have paniced when registering a constructor!",
+	)
+
+	assert.Nil(err, "No Error should have happened when registering")
+
+	container := containerBuilder.Build()
+
+	var result1 ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result1, err = Resolve[ss.IIndependentStruct](container)
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result1, "First object should not be nil!")
+	assert.Nil(err, "First resolved object should not have any error!")
+	assert.Equal("SingletonStruct", result1.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	var result2 ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result2, err = Resolve[ss.IIndependentStruct](container)
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result2, "Second object should not be nil!")
+	assert.Nil(err, "Second resolved object should not have any error!")
+	assert.Equal("SingletonStruct", result2.ReturnNameIndependentStruct(), "Functions should be able to run")
+}
+
+func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := NewContainerBuilder()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = RegisterConstructor[ss.IIndependentStruct](containerBuilder, ss.NewS, o.AsSingleton)
+		}, 
+		"Should not have paniced when registering a constructor!",
+	)
+
+	assert.Nil(err, "No Error should have happened when registering")
+
+	container := containerBuilder.Build()
+
+	var result1 ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result1, err = Resolve[ss.IIndependentStruct](container)
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result1, "First object should not be nil!")
+	assert.Nil(err, "First resolved object should not have any error!")
+	assert.Equal("SingletonStruct", result1.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	assert.NotNil(result1, "First object should not be nil!")
+	assert.Nil(err, "First resolved object should not have any error!")
+	assert.Equal("Already Ran!", result1.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	var result2 ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result2, err = Resolve[ss.IIndependentStruct](container)
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result2, "Second object should not be nil!")
+	assert.Nil(err, "Second resolved object should not have any error!")
+	assert.Equal("Already Ran!", result2.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	assert.Same(result1, result2, "They must be the same!")
 }
 
 func TestContainer_CannotResolve_ConstructorThrowsError(t *testing.T) {

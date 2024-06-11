@@ -7,6 +7,7 @@ import (
 
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
+	s "github.com/TaBSRest/GoFac/internal/Scope"
 )
 
 func Resolve[T interface{}](container *Container) (T, error) {
@@ -22,7 +23,7 @@ func Resolve[T interface{}](container *Container) (T, error) {
 		return base, err
 	}
 
-	dependencyT, ok := (*dependency).Interface().(T)
+	dependencyT, ok := dependency.Interface().(T)
 	if !ok {
 		return base, h.MakeError("GoFac.Resolve", "Could not cast to the given type! Please check the registration!")
 	}
@@ -69,6 +70,13 @@ func (container *Container) resolve(tInfo reflect.Type) (*reflect.Value, error) 
 
 func (container *Container) resolveOne(tInfo reflect.Type) (*reflect.Value, error) {
 	name := h.GetNameFromType(tInfo)
+	ptr, found := container.SingletonCache[name]
+
+	if found {
+		instance := ptr.Elem()
+		return &instance, nil
+	}
+
 	registrations, found := (*container).GetRegistrations(name)
 	if !found {
 		return nil, h.MakeError("GoFac.Resolve", fmt.Sprintf("%s is not registered!", name))
@@ -81,7 +89,14 @@ func (container *Container) resolveOne(tInfo reflect.Type) (*reflect.Value, erro
 		return nil, err
 	}
 
-	return resolveConstructor(constructor, name, dependencies)
+	instance, err := resolveConstructor(constructor, name, dependencies)
+	if err == nil && registration.Options.Scope == s.Singleton {
+		ptr := reflect.New(instance.Type())
+		ptr.Elem().Set(*instance)
+		container.SingletonCache[name] = &ptr
+	}
+
+	return instance, err
 }
 
 func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Value, error) {
