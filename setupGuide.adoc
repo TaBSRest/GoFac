@@ -16,9 +16,10 @@ Download and install Golang from the official website: https://go.dev/dl/
 
 To check installation and version (1.22.0), type:
 
-## [source, terminal]
-
-## go -version
+[source, terminal]
+----
+go -version
+----
 
 === Step 2: Install Go Mockery Package
 
@@ -26,13 +27,14 @@ To operate GoFac, you need to download Mockery Package from this website: https:
 
 === Step 3: Clone Repositories
 
-Each repository should be cloned _development_ branch.
+Each repository should be cloned *development*  branch.
 
 You can copy and paste it from the repository and type:
 
-## [source, terminal]
-
-## git clone -b "branch name" "Git URL"
+[source, terminal]
+----
+git clone -b "branch name" "Git URL"
+----
 
 == Windows Setup
 
@@ -44,31 +46,31 @@ Linux server is required to compile Go and other programming languages such as C
 
 You can download it with this command in cmd/PowerShell:
 
-## [source, cmd]
-
-## wsl --install
+[source, cmd]
+----
+wsl --install
+----
 
 === Step 2: Install Golang in WSL
 
 Run the following command in Command Prompt:
 
-## [source, cmd]
-
+[source, cmd]
+----
 wget https://dl.google.com/go/go1.22.0.linux-amd64.tar.gz
 sudo tar -xvf go1.22.0.linux-amd64.tar.gz
 sudo mv go /usr/local
-
----
+----
 
 Further information, visit https://dev.to/deadwin19/how-to-install-golang-on-wslwsl2-2880
 
 === Test GoFac
 Once complete the installation, check if it is working with this command:
 [source, cmd]
+----
+make test
+----
 
----
-
-## make test
 
 == Conclusion
 
