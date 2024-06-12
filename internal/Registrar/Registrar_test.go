@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	o "github.com/TaBS/GoFac/internal/RegistrationOption"
-	s "github.com/TaBS/GoFac/internal/Scope"
-	samplestructs "github.com/TaBS/GoFac/tests/SampleStructs"
-	ss "github.com/TaBS/GoFac/tests/SampleStructs"
+	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	s "github.com/TaBSRest/GoFac/internal/Scope"
+	samplestructs "github.com/TaBSRest/GoFac/tests/SampleStructs"
+	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
 
 func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
@@ -53,7 +53,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Constructor's first return value must be of the same typeInfo!",
+			msg: "Registration.NewRegistration: Constructor's first return value must be castible to the typeInfo!",
 		},
 		"Configuration Function Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -63,7 +63,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
+			msg: "Registration.NewRegistration: Error registering github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
 		},
 		"One of Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -74,7 +74,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
+			msg: "Registration.NewRegistration: Error registering github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
 		},
 		"Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -88,7 +88,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error2!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering github.com/TaBS/GoFac/tests/SampleStructs/IIndependentStruct\nError1!\nError2!",
+			msg: "Registration.NewRegistration: Error registering github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct\nError1!\nError2!",
 		},
 	}
 

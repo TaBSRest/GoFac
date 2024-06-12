@@ -1,4 +1,4 @@
-module github.com/TaBS/GoFac
+module github.com/TaBSRest/GoFac
 
 go 1.22.0
 
