@@ -64,6 +64,38 @@ sudo mv go /usr/local
 
 Further information, visit https://dev.to/deadwin19/how-to-install-golang-on-wslwsl2-2880
 
+=== Step 3: Install WSL Extension in VS Code
+
+To enhance your development experience, you can use the WSL extension in Visual Studio Code. This extension allows you to use the full power of VS Code while working within a WSL environment.
+
+Follow these steps to install and configure the WSL extension in VS Code:
+
+1. **Open Visual Studio Code**:
+   Launch Visual Studio Code from the Start menu or by searching for it.
+
+2. **Install the WSL Extension**:
+   - Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window or by pressing `Ctrl+Shift+X`.
+   - In the Extensions view search bar, type `WSL` to find the `Remote - WSL` extension.
+   - Click the `Install` button for the `Remote - WSL` extension by Microsoft.
+
+   Alternatively, you can install the extension directly from the command palette:
+   - Open the command palette by pressing `Ctrl+Shift+P`.
+   - Type `Extensions: Install Extensions` and press `Enter`.
+   - Search for `Remote - WSL` and select it to install.
+
+3. **Connect to WSL**:
+   - Once the extension is installed, open the command palette again (`Ctrl+Shift+P`).
+   - Type `Remote-WSL: New Window` and press `Enter` to open a new VS Code window connected to your WSL instance.
+   - You should now be able to open and edit files within your WSL environment directly from VS Code.
+
+4. **Verify Installation**:
+   - You can verify the installation by opening a terminal in VS Code (`Ctrl+``).
+   - The terminal should display your WSL distribution's prompt, indicating that you're connected to your WSL environment.
+
+For more details and troubleshooting, visit the official documentation: https://code.visualstudio.com/docs/remote/wsl
+
+
+
 === Test GoFac
 Once complete the installation, check if it is working with this command:
 [source, cmd]
