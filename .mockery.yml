@@ -1,0 +1,10 @@
+with-expecter: True
+dir: mocks/{{ replaceAll .InterfaceDirRelative "pkg" "" }} 
+mockname: "{{.InterfaceName}}"
+outpkg: "{{.PackageName}}"
+filename: "{{.InterfaceName}}.go"
+all: True
+packages:
+  github.com/TaBSRest/GoFac:
+    config:
+      recursive: True
