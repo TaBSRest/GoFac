@@ -1,9 +1,9 @@
-package helpers
+package Helpers
 
 import "reflect"
 
 func GetName[registrarInterface interface{}]() string {
-	var reflection reflect.Type = reflect.TypeFor[registrarInterface]()
+	reflection := reflect.TypeFor[registrarInterface]()
 	return GetNameFromType(reflection)
 }
 

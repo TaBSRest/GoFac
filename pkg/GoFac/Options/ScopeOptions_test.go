@@ -1,12 +1,12 @@
-package options
+package Options
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	o "github.com/pyj4104/GoFac/internal/RegistrationOption"
-	s "github.com/pyj4104/GoFac/internal/Scope"
+	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	s "github.com/TaBSRest/GoFac/internal/Scope"
 )
 
 func TestSetToPerCall_PerformsCorrectly(t *testing.T) {

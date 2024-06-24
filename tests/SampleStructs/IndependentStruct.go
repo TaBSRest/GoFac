@@ -2,22 +2,20 @@ package samplestructs
 
 import "errors"
 
-type IIndependentStruct interface {
-	VoidFuncA()
-}
-
 type IndependentStruct struct {}
 
-func NewA() *IndependentStruct {
+func NewA() IIndependentStruct {
 	return &IndependentStruct{}
 }
 
-func NewAWithErr() (*IndependentStruct, error) {
+func NewAWithErr() (IIndependentStruct, error) {
 	return &IndependentStruct{}, nil
 }
 
-func NewAReturningError() (*IndependentStruct, error) {
+func NewAReturningError() (IIndependentStruct, error) {
 	return nil, errors.New("IndependentStruct: Error Forming IndependentStruct!")
 }
 
-func (i *IndependentStruct) VoidFuncA() { }
+func (i *IndependentStruct) ReturnNameIndependentStruct() string {
+	return "IndependentStruct"
+}

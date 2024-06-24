@@ -1,7 +1,7 @@
 package registrationoption
 
 import (
-	s "github.com/pyj4104/GoFac/internal/Scope"
+	s "github.com/TaBSRest/GoFac/internal/Scope"
 )
 
 type RegistrationOption struct {
