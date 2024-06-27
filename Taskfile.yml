@@ -8,3 +8,49 @@ tasks:
   updateMock:
     cmds:
       - mockery
+  
+  test1:
+    desc: verbosity? NO   /   target? NO   /   show-no-test-files-warning? NO
+    cmds:
+      - go test ./... | grep -v "\[no test files\]"
+  
+  test2:
+    desc: verbosity? YES  /   target? NO   /   show-no-test-files-warning? NO
+    cmds:
+      - go test -v ./... | grep -v "\[no test files\]"
+  
+  test3:
+    desc: verbosity? NO   /   target? YES  /   show-no-test-files-warning? NO
+    cmds:
+      - |
+        if find {{.CLI_ARGS}} -name '*_test.go' -print -quit | grep -q .; then
+          go test {{.CLI_ARGS}}
+        fi
+
+  test4:
+    desc: verbosity? NO   /   target? NO   /   show-no-test-files-warning? YES
+    cmds:
+      - go test ./...
+  
+  test5:
+    desc: verbosity? YES  /   target? YES  /   show-no-test-files-warning? NO
+    cmds:
+      - |
+        if find {{.CLI_ARGS}} -name '*_test.go' -print -quit | grep -q .; then
+          go test -v {{.CLI_ARGS}}
+        fi
+  
+  test6:
+    desc: verbosity? YES  /   target? NO   /   show-no-test-files-warning? YES
+    cmds:
+      - go test -v ./...
+  
+  test7:
+    desc: verbosity? NO   /   target? YES  /   show-no-test-files-warning? YES
+    cmds:
+      - go test {{.CLI_ARGS}}
+  
+  test8:
+    desc: verbosity? YES  /   target? YES  /   show-no-test-files-warning? YES
+    cmds:
+      - go test -v {{.CLI_ARGS}}
