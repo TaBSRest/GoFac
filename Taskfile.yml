@@ -9,6 +9,44 @@ tasks:
     cmds:
       - mockery
   
+  test:
+    cmds:
+      - |
+        path=$(echo "{{.CLI_ARGS}}" | tr -d ' ' | sed -e 's/-v//g' -e 's/-t//g' -e 's/--Show-No-Test-Files-Warning//g')
+        if echo "{{.CLI_ARGS}}" | grep -q "\-v"; then
+          if echo "{{.CLI_ARGS}}" | grep -q "\-\-Show-No-Test-Files-Warning"; then
+            if echo "{{.CLI_ARGS}}" | grep -q "\-t"; then
+              go test -v "$path"
+            else
+              go test -v ./...
+            fi
+          else
+            if echo "{{.CLI_ARGS}}" | grep -q "\-t"; then
+              if find "$path" -name '*_test.go' -print -quit | grep -q .; then
+                go test -v "$path"
+              fi
+            else
+              go test -v ./... | grep -v "\[no test files\]"
+            fi
+          fi
+        else
+          if echo "{{.CLI_ARGS}}" | grep -q "\-\-Show-No-Test-Files-Warning"; then
+            if echo "{{.CLI_ARGS}}" | grep -q "\-t"; then
+              go test "$path"
+            else
+              go test ./...
+            fi
+          else
+            if echo "{{.CLI_ARGS}}" | grep -q "\-t"; then
+              if find "$path" -name '*_test.go' -print -quit | grep -q .; then
+                go test "$path"
+              fi
+            else
+              go test ./... | grep -v "\[no test files\]"
+            fi
+          fi          
+        fi
+
   test1:
     desc: verbosity? NO   /   target? NO   /   show-no-test-files-warning? NO
     cmds:
