@@ -8,3 +8,7 @@ tasks:
   updateMock:
     cmds:
       - mockery
+  
+  test:
+    cmds:
+      - python3 ./buildscript.py {{.CLI_ARGS}}
