@@ -19,3 +19,8 @@
 
 # Go workspace file
 go.work
+
+# Coverage files
+coverage/cover.txt
+coverage/dump.txt
+Results.html
