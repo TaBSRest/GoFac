@@ -8,29 +8,3 @@ tasks:
   updateMock:
     cmds:
       - mockery
-  
-  test:
-    cmds:
-      - python3 ./buildscript.py {{.CLI_ARGS}}
-
-  checkCoverage:
-    cmds:
-      - echo "Checking the Total Line Coverage..."
-      - go test ./... -coverprofile=./coverage/cover.txt > ./coverage/dump.txt
-      - go tool cover -func ./coverage/cover.txt | fgrep total | awk '{print $3}'
-      - echo "All Done!"
-  
-  updateCoverage:
-    cmds:
-      - echo "Updating the Total Line Coverage..."
-      - go test ./... -coverprofile=./coverage/cover.txt > ./coverage/dump.txt
-      - go tool cover -func ./coverage/cover.txt | fgrep total | awk '{print $3}'
-      - go tool cover -func ./coverage/cover.txt | fgrep total | awk '{print $3}' > ./coverage/LineCoverage.txt
-      - echo "All Done!"
-  
-  generateCoverageReport:
-    cmds:
-      - echo "Generating Coverage Report..."
-      - go test ./... -coverprofile=./coverage/cover.txt > ./coverage/dump.txt
-      - go tool cover -html=./coverage/cover.txt -o ./coverage/Results.html
-      - echo "All Done!"
