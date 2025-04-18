@@ -6,6 +6,7 @@ import (
 
 type RegistrationOption struct {
 	Scope s.LifetimeScope
+	RegistrationName string
 }
 
 func NewRegistrationOption() *RegistrationOption {
