@@ -12,8 +12,8 @@ import (
 
 type Registration struct {
 	Construction c.Construction
-	TypeInfo reflect.Type
-	Options  o.RegistrationOption
+	TypeInfo     reflect.Type
+	Options      o.RegistrationOption
 }
 
 func NewRegistration(
@@ -55,15 +55,15 @@ func NewRegistration(
 
 	return &Registration{
 		Construction: construction,
-		TypeInfo: typeInfo,
-		Options:  *options,
+		TypeInfo:     typeInfo,
+		Options:      *options,
 	}, nil
 }
 
 func constructorErrorChecks(
 	constructor interface{},
 	typeInfo reflect.Type,
-) (error) {
+) error {
 	constructorTypeInfo := reflect.TypeOf(constructor)
 	if constructor == nil {
 		return h.MakeError("Registration.NewRegistration", "Constructor is nil!")

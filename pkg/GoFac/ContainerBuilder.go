@@ -7,14 +7,17 @@ import (
 )
 
 type ContainerBuilder struct {
-	built bool
-	cache map[string][]*r.Registration
+	built          bool
+	cache          map[string][]*r.Registration
+	perContextList []*r.Registration
 }
 
 func NewContainerBuilder() *ContainerBuilder {
+	var perContextOnces []*r.Registration
 	return &ContainerBuilder{
-		built: false,
-		cache: make(map[string][]*r.Registration),
+		built:          false,
+		cache:          make(map[string][]*r.Registration),
+		perContextList: perContextOnces,
 	}
 }
 
@@ -29,7 +32,7 @@ func (cb *ContainerBuilder) GetRegistrations(name string) ([]r.Registration, boo
 
 func (cb *ContainerBuilder) Build() *Container {
 	singletonCache := make(map[string]*reflect.Value)
-	return &Container {
+	return &Container{
 		cb,
 		singletonCache,
 	}

@@ -7,14 +7,15 @@ import (
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	s "github.com/TaBSRest/GoFac/internal/Scope"
 )
 
 func RegisterConstructor[T interface{}](
-	container *ContainerBuilder,
+	containerBuilder *ContainerBuilder,
 	factory interface{},
 	configFunctions ...func(*o.RegistrationOption) error,
 ) error {
-	if container.IsBuilt() {
+	if containerBuilder.IsBuilt() {
 		return h.MakeError("ContainerBuilder.RegisterConstructor", "Cannot register constructors after the container is built!")
 	}
 
@@ -28,12 +29,15 @@ func RegisterConstructor[T interface{}](
 
 	name := h.GetName[T]()
 
-	if _, found := container.cache[name]; !found {
-		container.cache[name] = []*r.Registration{}
+	if _, found := containerBuilder.cache[name]; !found {
+		containerBuilder.cache[name] = []*r.Registration{}
 	}
 
-	container.cache[name] = append(container.cache[name], registrar)
+	containerBuilder.cache[name] = append(containerBuilder.cache[name], registrar)
+
+	if registrar.Options.Scope == s.PerContext {
+		containerBuilder.perContextList = append(containerBuilder.perContextList, registrar)
+	}
 
 	return nil
 }
-
