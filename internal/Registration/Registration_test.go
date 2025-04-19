@@ -16,7 +16,7 @@ import (
 
 func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 	cases := map[string]struct {
-		factory        interface{}
+		factory        any
 		typeReflection reflect.Type
 		configFuncs    []func(*o.RegistrationOption) error
 		msg            string
@@ -33,18 +33,6 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 			configFuncs:    nil,
 			msg:            "Registration.NewRegistration: Constructor is not a function!",
 		},
-		"TypeReflection is nil": {
-			factory:        func(...any) (any, error) { return nil, nil },
-			typeReflection: nil,
-			configFuncs:    nil,
-			msg:            "Registration.NewRegistration: TypeInfo is nil!",
-		},
-		"TypeReflection is not interface": {
-			factory:        func(...any) (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
-			typeReflection: reflect.TypeOf(samplestructs.IndependentStruct{}),
-			configFuncs:    nil,
-			msg:            "Registration.NewRegistration: Must register interface!",
-		},
 		"TypeInfo and Constructor mismatch!": {
 			factory:        func(...any) (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
 			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
@@ -53,7 +41,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Constructor's first return value must be castible to the typeInfo!",
+			msg: "GoFac/internal/Registration.NewRegistration: Cannot Register\n\twith inner error: Error!",
 		},
 		"Configuration Function Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -63,7 +51,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
+			msg: "GoFac/internal/Registration.NewRegistration: Cannot Register\n\twith inner error: Error!",
 		},
 		"One of Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -74,7 +62,8 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct\nError!",
+			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
+	with inner error: Error!`,
 		},
 		"Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -88,7 +77,9 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error2!")
 				},
 			},
-			msg: "Registration.NewRegistration: Error registering github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct\nError1!\nError2!",
+			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
+	with inner error: Error1!
+	with inner error: Error2!`,
 		},
 	}
 
@@ -102,7 +93,6 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 				func() {
 					val, err = NewRegistration(
 						test.factory,
-						test.typeReflection,
 						test.configFuncs...,
 					)
 				},
@@ -118,7 +108,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 
 func TestRegistration_NewRegistration_RegistersCorrectly(t *testing.T) {
 	cases := map[string]struct {
-		factory        interface{}
+		factory        any
 		typeReflection reflect.Type
 		configFuncs    []func(*o.RegistrationOption) error
 		msg            string
@@ -162,7 +152,6 @@ func TestRegistration_NewRegistration_RegistersCorrectly(t *testing.T) {
 				func() {
 					val, err = NewRegistration(
 						test.factory,
-						test.typeReflection,
 						test.configFuncs...,
 					)
 				},
@@ -170,7 +159,6 @@ func TestRegistration_NewRegistration_RegistersCorrectly(t *testing.T) {
 			)
 
 			assert.NotNil(val, "NewRegistration should have failed!")
-			assert.Same(test.typeReflection, val.TypeInfo, "TypeReflection must be the same!")
 			// Direct func comparison is not supported in Go. However, we can still compare the names
 			assert.Equal(
 				runtime.FuncForPC(reflect.ValueOf(test.factory).Pointer()).Name(),
