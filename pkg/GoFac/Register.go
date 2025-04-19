@@ -9,9 +9,9 @@ import (
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 )
 
-func RegisterConstructor[T interface{}](
+func RegisterConstructor[T any](
 	container *ContainerBuilder,
-	factory interface{},
+	factory any,
 	configFunctions ...func(*o.RegistrationOption) error,
 ) error {
 	if container.IsBuilt() {
@@ -26,13 +26,13 @@ func RegisterConstructor[T interface{}](
 		)
 	}
 
-	name := h.GetName[T]()
+	key := reflect.TypeFor[T]()
 
-	if _, found := container.cache[name]; !found {
-		container.cache[name] = []*r.Registration{}
+	if _, found := container.cache[key]; !found {
+		container.cache[key] = []*r.Registration{}
 	}
 
-	container.cache[name] = append(container.cache[name], registrar)
+	container.cache[key] = append(container.cache[key], registrar)
 
 	return nil
 }

@@ -4,5 +4,5 @@ import "reflect"
 
 type Container struct {
 	*ContainerBuilder
-	SingletonCache map[string]*reflect.Value
+	SingletonCache map[reflect.Type]*reflect.Value
 }

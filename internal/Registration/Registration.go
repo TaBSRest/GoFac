@@ -17,7 +17,7 @@ type Registration struct {
 }
 
 func NewRegistration(
-	constructor interface{},
+	constructor any,
 	typeInfo reflect.Type,
 	ConfigurationFunctions ...func(*o.RegistrationOption) error,
 ) (*Registration, error) {
@@ -32,7 +32,7 @@ func NewRegistration(
 			"Registration.NewRegistration",
 			fmt.Sprintf(
 				"Error registering %s",
-				h.GetNameFromType(typeInfo),
+				h.GetNameFor(typeInfo),
 			),
 		),
 	}
