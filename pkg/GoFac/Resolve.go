@@ -7,6 +7,7 @@ import (
 
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
+	r "github.com/TaBSRest/GoFac/internal/Registration"
 	s "github.com/TaBSRest/GoFac/internal/Scope"
 )
 
@@ -70,17 +71,15 @@ func resolve(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
 
 func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
 	typeName := h.GetNameFor(tInfo)
-	ptr, found := container.SingletonCache[tInfo]
-	if found {
-		instance := ptr.Elem()
-		return &instance, nil
-	}
 
 	registrations, found := GetRegistrationsFor(container.ContainerBuilder, tInfo)
 	if !found {
 		return nil, h.MakeError("GoFac.Resolve", fmt.Sprintf("%s is not registered!", h.GetNameFor(tInfo)))
 	}
 	registration := registrations[len(registrations)-1]
+	if item := container.resolveSingleton(registration); item != nil {
+		return item, nil
+	}
 
 	constructor := registration.Construction
 	dependencies, err := container.getDependencies(typeName, constructor)
@@ -90,9 +89,7 @@ func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error
 
 	instance, err := resolveConstructor(constructor, typeName, dependencies)
 	if err == nil && registration.Options.Scope == s.Singleton {
-		ptr := reflect.New(instance.Type())
-		ptr.Elem().Set(*instance)
-		container.SingletonCache[tInfo] = &ptr
+		container.SingletonCache[registration] = instance
 	}
 
 	return instance, err
@@ -105,22 +102,26 @@ func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Valu
 		return nil, h.MakeError("GoFac.Resolve", fmt.Sprintf("%s is not registered!", name))
 	}
 
-	var reflections []*reflect.Value = make([]*reflect.Value, 0)
+	var reflections []*reflect.Value
 	for _, registration := range registrations {
-		constructor := registration.Construction
-		dependencies, err := container.getDependencies(name, constructor)
-		if err != nil {
-			return nil, err
-		}
+		if item := container.resolveSingleton(registration); item != nil {
+			reflections = append(reflections, item)
+		} else {
+			constructor := registration.Construction
+			dependencies, err := container.getDependencies(name, constructor)
+			if err != nil {
+				return nil, err
+			}
 
-		reflection, err := resolveConstructor(constructor, name, dependencies)
-		if err != nil {
-			return nil, errors.Join(
-				h.MakeError("GoFac.Resolve", fmt.Sprintf("Error resolving %s", constructor.Info.Name())),
-				err,
-			)
+			reflection, err := resolveConstructor(constructor, name, dependencies)
+			if err != nil {
+				return nil, errors.Join(
+					h.MakeError("GoFac.Resolve", fmt.Sprintf("Error resolving %s", constructor.Info.Name())),
+					err,
+				)
+			}
+			reflections = append(reflections, reflection)
 		}
-		reflections = append(reflections, reflection)
 	}
 
 	return reflections, nil
@@ -170,3 +171,10 @@ func resolveConstructor(construction c.Construction, name string, dependencies [
 	return &value[0], nil
 }
 
+func (container *Container) resolveSingleton(registration *r.Registration) (*reflect.Value) {
+	instance, found := container.SingletonCache[registration]
+	if found {
+		return instance
+	}
+	return nil
+}

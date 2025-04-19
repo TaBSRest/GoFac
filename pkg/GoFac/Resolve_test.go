@@ -202,6 +202,59 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	assert.Same(result1, result2, "They must be the same!")
 }
 
+func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentType(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := NewContainerBuilder()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = RegisterConstructor(
+				containerBuilder,
+				ss.NewS,
+				o.AsSingleton,
+				o.As[ss.IIndependentStruct],
+				o.As[ss.IIndependentStruct2],
+			)
+		}, 
+		"Should not have paniced when registering a constructor!",
+	)
+
+	assert.Nil(err, "No Error should have happened when registering")
+
+	container := containerBuilder.Build()
+
+	var result1 ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result1, err = Resolve[ss.IIndependentStruct](container)
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result1, "First object should not be nil!")
+	assert.Nil(err, "First resolved object should not have any error!")
+	assert.Equal("SingletonStruct", result1.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	assert.NotNil(result1, "First object should not be nil!")
+	assert.Nil(err, "First resolved object should not have any error!")
+	assert.Equal("Already Ran!", result1.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	var result2 ss.IIndependentStruct2
+	assert.NotPanics(
+		func() {
+			result2, err = Resolve[ss.IIndependentStruct2](container)
+		}, 
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result2, "Second object should not be nil!")
+	assert.Nil(err, "Second resolved object should not have any error!")
+	assert.Equal("Already Ran!", result2.ReturnNameIndependentStruct(), "Functions should be able to run")
+
+	assert.Same(result1, result2, "They must be the same!")
+}
+
 func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDependency(t *testing.T) {
 	assert := assert.New(t)
 
@@ -468,3 +521,41 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 	assert.Contains(result[0].ReturnNameIndependentStruct(), "IndependentStruct", "IndependentStruct should have been resolved too!")
 	assert.Contains(result[1].ReturnNameIndependentStruct(), "IndependentStructB", "IndependentStructB should have been resolved too!")
 }
+
+func TestContainer_ResolveMultiple_ResolvesSingleton(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := NewContainerBuilder()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = RegisterConstructor(
+				containerBuilder,
+				ss.NewB,
+				o.As[ss.IIndependentStruct],
+			)
+			err = RegisterConstructor(
+				containerBuilder,
+				ss.NewA,
+				o.As[ss.IIndependentStruct],
+				o.AsSingleton,
+			)
+		}, 
+		"Should not have paniced when registering a constructor!",
+	)
+	assert.Nil(err)
+
+	container := containerBuilder.Build()
+
+	a1, err := Resolve[ss.IIndependentStruct](container)
+	assert.NotNil(a1)
+	assert.Nil(err)
+
+	as, err := ResolveMultiple[ss.IIndependentStruct](container)
+	assert.NotNil(as)
+	assert.NotEmpty(as)
+	assert.Nil(err)
+
+	assert.Same(a1, as[1], "They must be the same!")
+}
+

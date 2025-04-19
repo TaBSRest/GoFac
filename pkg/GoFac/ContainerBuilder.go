@@ -18,27 +18,27 @@ func NewContainerBuilder() *ContainerBuilder {
 	}
 }
 
-func GetRegistrations[T any](cb *ContainerBuilder) ([]r.Registration, bool) {
+func GetRegistrations[T any](cb *ContainerBuilder) ([]*r.Registration, bool) {
 	key := reflect.TypeFor[T]()
 	registrationPointer, found := cb.cache[key]
-	var registrations []r.Registration = make([]r.Registration, len(registrationPointer))
+	var registrations []*r.Registration = make([]*r.Registration, len(registrationPointer))
 	for index, ptr := range registrationPointer {
-		registrations[index] = *ptr
+		registrations[index] = ptr
 	}
 	return registrations, found
 }
 
-func GetRegistrationsFor(cb *ContainerBuilder, registrationType reflect.Type) ([]r.Registration, bool) {
+func GetRegistrationsFor(cb *ContainerBuilder, registrationType reflect.Type) ([]*r.Registration, bool) {
 	registrationPointer, found := cb.cache[registrationType]
-	var registrations []r.Registration = make([]r.Registration, len(registrationPointer))
+	var registrations []*r.Registration = make([]*r.Registration, len(registrationPointer))
 	for index, ptr := range registrationPointer {
-		registrations[index] = *ptr
+		registrations[index] = ptr
 	}
 	return registrations, found
 }
 
 func (cb *ContainerBuilder) Build() *Container {
-	singletonCache := make(map[reflect.Type]*reflect.Value)
+	singletonCache := make(map[*r.Registration]*reflect.Value)
 	return &Container {
 		cb,
 		singletonCache,
