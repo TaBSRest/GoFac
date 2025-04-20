@@ -31,9 +31,6 @@ func NewRegistration(
 			errors = append(errors, err)
 		}
 	}
-	if len(errors) > 0 {
-		return nil, te.New("Cannot Register").JoinMultiple(errors)
-	}
 
 	if len(options.RegistrationType) == 0 {
 		options.RegistrationType = append(options.RegistrationType, constructorTypeInfo.Out(0))
@@ -46,6 +43,10 @@ func NewRegistration(
 				te.New(fmt.Sprintf("The constructor's first return value must be castible to the %s", tInfo.String())),
 			)
 		}
+	}
+
+	if len(errors) > 0 {
+		return nil, te.New("Cannot Register").JoinMultiple(errors)
 	}
 
 	construction, err := c.NewConstruction(reflect.TypeOf(constructor), reflect.ValueOf(constructor))

@@ -2,6 +2,7 @@ package Registration
 
 import (
 	"errors"
+	"net/http"
 	"reflect"
 	"runtime"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 	s "github.com/TaBSRest/GoFac/internal/Scope"
+	options "github.com/TaBSRest/GoFac/pkg/GoFac/Options"
 	samplestructs "github.com/TaBSRest/GoFac/tests/SampleStructs"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
@@ -23,19 +25,16 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 	}{
 		"Constructor is nil": {
 			factory:        nil,
-			typeReflection: nil,
 			configFuncs:    nil,
 			msg:            "Registration.NewRegistration: Constructor is nil!",
 		},
 		"Constructor is not a function": {
 			factory:        ss.IndependentStruct{},
-			typeReflection: nil,
 			configFuncs:    nil,
 			msg:            "Registration.NewRegistration: Constructor is not a function!",
 		},
 		"TypeInfo and Constructor mismatch!": {
 			factory:        func(...any) (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
-			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error {
 					return errors.New("Error!")
@@ -45,7 +44,6 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 		},
 		"Configuration Function Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
-			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error {
 					return errors.New("Error!")
@@ -55,7 +53,6 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 		},
 		"One of Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
-			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error { return nil },
 				func(*o.RegistrationOption) error {
@@ -67,7 +64,6 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 		},
 		"Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
-			typeReflection: reflect.TypeFor[samplestructs.IIndependentStruct](),
 			configFuncs: []func(*o.RegistrationOption) error{
 				func(*o.RegistrationOption) error {
 					return errors.New("Error1!")
@@ -80,6 +76,14 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
 	with inner error: Error1!
 	with inner error: Error2!`,
+		},
+		"Not Castible": {
+			factory:        func() (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
+			configFuncs: []func(*o.RegistrationOption) error{
+				options.As[http.Handler],
+			},
+			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
+	with inner error: GoFac/internal/Registration.NewRegistration: The constructor's first return value must be castible to the http.Handler`,
 		},
 	}
 
