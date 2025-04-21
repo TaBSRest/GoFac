@@ -80,6 +80,9 @@ func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error
 		return nil, te.New(fmt.Sprintf("%s is not registered!", tInfo.String()))
 	}
 	registration := registrations[len(registrations)-1]
+	if item := container.resolveSingleton(registration); item != nil {
+		return item, nil
+	}
 
 	constructor := registration.Construction
 	dependencies, err := container.getDependencies(tInfo.String(), constructor)
@@ -110,7 +113,6 @@ func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Valu
 		if err != nil {
 			return nil, te.New("Error resolving "+constructor.Info.Name()).Join(err)
 		}
-		reflections = append(reflections, reflection)
 	}
 
 	return reflections, nil
