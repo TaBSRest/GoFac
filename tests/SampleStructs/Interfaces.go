@@ -1,4 +1,4 @@
-package samplestructs
+package SampleStructs
 
 type IIndependentStruct interface {
 	ReturnNameIndependentStruct() string

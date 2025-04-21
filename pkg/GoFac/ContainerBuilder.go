@@ -2,6 +2,7 @@ package GoFac
 
 import (
 	"reflect"
+	"sync"
 
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 )
@@ -38,10 +39,9 @@ func GetRegistrationsFor(cb *ContainerBuilder, registrationType reflect.Type) ([
 }
 
 func (cb *ContainerBuilder) Build() *Container {
-	singletonCache := make(map[*r.Registration]*reflect.Value)
 	return &Container {
-		cb,
-		singletonCache,
+		ContainerBuilder: cb,
+		SingletonCache: sync.Map{},
 	}
 }
 

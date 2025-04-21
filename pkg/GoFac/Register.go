@@ -1,11 +1,9 @@
 package GoFac
 
 import (
-	"errors"
-
-	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 )
 
 func RegisterConstructor(
@@ -14,15 +12,12 @@ func RegisterConstructor(
 	configFunctions ...func(*o.RegistrationOption) error,
 ) error {
 	if container.IsBuilt() {
-		return h.MakeError("ContainerBuilder.RegisterConstructor", "Cannot register constructors after the container is built!")
+		return te.New("Cannot register constructors after the container is built!")
 	}
 
 	registrar, err := r.NewRegistration(factory, configFunctions...)
 	if err != nil {
-		return errors.Join(
-			h.MakeError("GoFac.RegisterConstructor", "Could not register T:"),
-			err,
-		)
+		return te.New("Could not register T").Join(err)
 	}
 
 	for _, key := range registrar.Options.RegistrationType {
