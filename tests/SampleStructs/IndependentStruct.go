@@ -4,6 +4,10 @@ import "errors"
 
 type IndependentStruct struct {}
 
+func NewIndependentStruct() *IndependentStruct {
+	return &IndependentStruct{}
+}
+
 func NewA() IIndependentStruct {
 	return &IndependentStruct{}
 }

@@ -27,12 +27,12 @@ func Test_GetName_CreatesNameWithPackageName(t *testing.T) {
 	)
 }
 
-func Test_GetNameFromType_CreatesNameWithPackageName(t *testing.T) {
+func Test_GetNameFor_CreatesNameWithPackageName(t *testing.T) {
 	assert := assert.New(t)
 
 	var interfaceName string
 	assert.NotPanics(
-		func() { interfaceName = GetNameFromType(reflect.TypeFor[ss.IIndependentStruct]()) },
+		func() { interfaceName = GetNameFor(reflect.TypeFor[ss.IIndependentStruct]()) },
 		"Should not throw when getting the interface name",
 	)
 	assert.NotEmpty(

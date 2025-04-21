@@ -7,10 +7,11 @@ import (
 
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
+	r "github.com/TaBSRest/GoFac/internal/Registration"
 	s "github.com/TaBSRest/GoFac/internal/Scope"
 )
 
-func Resolve[T interface{}](container *Container) (T, error) {
+func Resolve[T any](container *Container) (T, error) {
 	var base T
 
 	tInfo := reflect.TypeFor[T]()
@@ -18,7 +19,7 @@ func Resolve[T interface{}](container *Container) (T, error) {
 		return base, h.MakeError("GoFac.Resolve", "Use ResolveMultiple for resolving an array or a slice")
 	}
 
-	dependency, err := container.resolve(tInfo)
+	dependency, err := resolve(container, tInfo)
 	if err != nil {
 		return base, err
 	}
@@ -30,7 +31,7 @@ func Resolve[T interface{}](container *Container) (T, error) {
 	return dependencyT, nil
 }
 
-func ResolveMultiple[T interface{}](container *Container) ([]T, error) {
+func ResolveMultiple[T any](container *Container) ([]T, error) {
 	var base []T
 
 	if h.IsArrayOrSlice(reflect.TypeFor[T]()) {
@@ -38,7 +39,7 @@ func ResolveMultiple[T interface{}](container *Container) ([]T, error) {
 	}
 
 	tInfo := reflect.TypeFor[[]T]()
-	dependency, err := container.resolve(tInfo)
+	dependency, err := resolve(container, tInfo)
 	if err != nil {
 		return base, err
 	}
@@ -48,7 +49,7 @@ func ResolveMultiple[T interface{}](container *Container) ([]T, error) {
 	}
 
 	var resolutions []T
-	for i := 0; i < (*dependency).Len(); i++ {
+	for i := range (*dependency).Len() {
 		resolution, ok := (*dependency).Index(i).Interface().(reflect.Value).Interface().(T)
 		if !ok {
 			return base, h.MakeError("GoFac.Resolve", "One of the dependency could not be casted as "+tInfo.Elem().Name())
@@ -58,70 +59,69 @@ func ResolveMultiple[T interface{}](container *Container) ([]T, error) {
 	return resolutions, nil
 }
 
-func (container *Container) resolve(tInfo reflect.Type) (*reflect.Value, error) {
+func resolve(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
 	if h.IsArrayOrSlice(tInfo) {
 		tmpResolution, err := container.resolveMultiple(tInfo.Elem())
 		resolution := reflect.ValueOf(h.DereferencePointedArr(tmpResolution))
 		return &resolution, err
 	} else {
-		return container.resolveOne(tInfo)
+		return resolveOne(container, tInfo)
 	}
 }
 
-func (container *Container) resolveOne(tInfo reflect.Type) (*reflect.Value, error) {
-	name := h.GetNameFromType(tInfo)
-	ptr, found := container.SingletonCache[name]
+func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
+	typeName := h.GetNameFor(tInfo)
 
-	if found {
-		instance := ptr.Elem()
-		return &instance, nil
-	}
-
-	registrations, found := (*container).GetRegistrations(name)
+	registrations, found := GetRegistrationsFor(container.ContainerBuilder, tInfo)
 	if !found {
-		return nil, h.MakeError("GoFac.Resolve", fmt.Sprintf("%s is not registered!", name))
+		return nil, h.MakeError("GoFac.Resolve", fmt.Sprintf("%s is not registered!", h.GetNameFor(tInfo)))
 	}
 	registration := registrations[len(registrations)-1]
+	if item := container.resolveSingleton(registration); item != nil {
+		return item, nil
+	}
 
 	constructor := registration.Construction
-	dependencies, err := container.getDependencies(name, constructor)
+	dependencies, err := container.getDependencies(typeName, constructor)
 	if err != nil {
 		return nil, err
 	}
 
-	instance, err := resolveConstructor(constructor, name, dependencies)
+	instance, err := resolveConstructor(constructor, typeName, dependencies)
 	if err == nil && registration.Options.Scope == s.Singleton {
-		ptr := reflect.New(instance.Type())
-		ptr.Elem().Set(*instance)
-		container.SingletonCache[name] = &ptr
+		container.SingletonCache[registration] = instance
 	}
 
 	return instance, err
 }
 
 func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Value, error) {
-	name := h.GetNameFromType(tInfo)
-	registrations, found := (*container).GetRegistrations(name)
+	name := h.GetNameFor(tInfo)
+	registrations, found := GetRegistrationsFor(container.ContainerBuilder, tInfo)
 	if !found {
 		return nil, h.MakeError("GoFac.Resolve", fmt.Sprintf("%s is not registered!", name))
 	}
 
-	var reflections []*reflect.Value = make([]*reflect.Value, 0)
+	var reflections []*reflect.Value
 	for _, registration := range registrations {
-		constructor := registration.Construction
-		dependencies, err := container.getDependencies(name, constructor)
-		if err != nil {
-			return nil, err
-		}
+		if item := container.resolveSingleton(registration); item != nil {
+			reflections = append(reflections, item)
+		} else {
+			constructor := registration.Construction
+			dependencies, err := container.getDependencies(name, constructor)
+			if err != nil {
+				return nil, err
+			}
 
-		reflection, err := resolveConstructor(constructor, name, dependencies)
-		if err != nil {
-			return nil, errors.Join(
-				h.MakeError("GoFac.Resolve", fmt.Sprintf("Error resolving %s", constructor.Info.Name())),
-				err,
-			)
+			reflection, err := resolveConstructor(constructor, name, dependencies)
+			if err != nil {
+				return nil, errors.Join(
+					h.MakeError("GoFac.Resolve", fmt.Sprintf("Error resolving %s", constructor.Info.Name())),
+					err,
+				)
+			}
+			reflections = append(reflections, reflection)
 		}
-		reflections = append(reflections, reflection)
 	}
 
 	return reflections, nil
@@ -129,9 +129,9 @@ func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Valu
 
 func (container *Container) getDependencies(originalConstructorName string, construction c.Construction) ([]*reflect.Value, error) {
 	dependencies := make([]*reflect.Value, construction.Info.NumIn())
-	for i := 0; i < construction.Info.NumIn(); i++ {
+	for i := range construction.Info.NumIn() {
 		dependencyInfo := construction.Info.In(i)
-		dependency, err := container.resolve(dependencyInfo)
+		dependency, err := resolve(container, dependencyInfo)
 		if err != nil {
 			return nil, errors.Join(
 				h.MakeError(
@@ -149,7 +149,7 @@ func (container *Container) getDependencies(originalConstructorName string, cons
 
 func resolveConstructor(construction c.Construction, name string, dependencies []*reflect.Value) (*reflect.Value, error) {
 	types := make([]reflect.Type, construction.Info.NumIn())
-	for i := 0; i < construction.Info.NumIn(); i++ {
+	for i := range construction.Info.NumIn() {
 		types[i] = construction.Info.In(i)
 	}
 	castedDependencies, err := h.CastInput(h.DereferencePointedArr(dependencies), types)
@@ -169,4 +169,12 @@ func resolveConstructor(construction c.Construction, name string, dependencies [
 	}
 
 	return &value[0], nil
+}
+
+func (container *Container) resolveSingleton(registration *r.Registration) (*reflect.Value) {
+	instance, found := container.SingletonCache[registration]
+	if found {
+		return instance
+	}
+	return nil
 }
