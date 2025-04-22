@@ -1,4 +1,4 @@
-package samplestructs
+package SampleStructs
 
 type StructRelyingOnIndependentStruct struct {
 	dependency IIndependentStruct

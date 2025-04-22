@@ -1,8 +1,10 @@
 package GoFac
 
-import "reflect"
+import (
+	"sync"
+)
 
 type Container struct {
 	*ContainerBuilder
-	SingletonCache map[string]*reflect.Value
+	SingletonCache sync.Map
 }

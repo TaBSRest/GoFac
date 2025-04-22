@@ -1,10 +1,11 @@
 package Registration
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 
+	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
@@ -12,59 +13,57 @@ import (
 
 type Registration struct {
 	Construction c.Construction
-	TypeInfo     reflect.Type
-	Options      o.RegistrationOption
+	Options  o.RegistrationOption
+	SingletonOnce *sync.Once
 }
 
 func NewRegistration(
-	constructor interface{},
-	typeInfo reflect.Type,
+	constructor any,
 	ConfigurationFunctions ...func(*o.RegistrationOption) error,
 ) (*Registration, error) {
-	if err := constructorErrorChecks(constructor, typeInfo); err != nil {
+	constructorTypeInfo := reflect.TypeOf(constructor)
+	if err := constructorErrorChecks(constructor, constructorTypeInfo); err != nil {
 		return nil, err
 	}
 
 	var options *o.RegistrationOption = o.NewRegistrationOption()
-
-	aggregatedErrors := []error{
-		h.MakeError(
-			"Registration.NewRegistration",
-			fmt.Sprintf(
-				"Error registering %s",
-				h.GetNameFromType(typeInfo),
-			),
-		),
-	}
-
+	var errors []error
 	for _, config := range ConfigurationFunctions {
 		if err := config(options); err != nil {
-			aggregatedErrors = append(aggregatedErrors, err)
+			errors = append(errors, err)
 		}
 	}
-	if len(aggregatedErrors) > 1 {
-		return nil, errors.Join(
-			aggregatedErrors...,
-		)
+
+	if len(options.RegistrationType) == 0 {
+		options.RegistrationType = append(options.RegistrationType, constructorTypeInfo.Out(0))
+	}
+
+	for _, tInfo := range options.RegistrationType {
+		if !constructorTypeInfo.Out(0).ConvertibleTo(tInfo) {
+			errors = append(
+				errors,
+				te.New(fmt.Sprintf("The constructor's first return value must be castible to the %s", tInfo.String())),
+			)
+		}
+	}
+
+	if len(errors) > 0 {
+		return nil, te.New("Cannot Register").JoinMultiple(errors)
 	}
 
 	construction, err := c.NewConstruction(reflect.TypeOf(constructor), reflect.ValueOf(constructor))
 	if err != nil {
-		errors.Join(h.MakeError("Registrar.NewRegistration", "Error while registering!"), err)
+		return nil, te.New("Error while registering!").Join(err)
 	}
 
 	return &Registration{
 		Construction: construction,
-		TypeInfo:     typeInfo,
-		Options:      *options,
+		Options:  *options,
+		SingletonOnce: new(sync.Once),
 	}, nil
 }
 
-func constructorErrorChecks(
-	constructor interface{},
-	typeInfo reflect.Type,
-) error {
-	constructorTypeInfo := reflect.TypeOf(constructor)
+func constructorErrorChecks(constructor any, constructorTypeInfo reflect.Type) (error) {
 	if constructor == nil {
 		return h.MakeError("Registration.NewRegistration", "Constructor is nil!")
 	}
@@ -73,15 +72,6 @@ func constructorErrorChecks(
 	}
 	if constructorTypeInfo.NumOut() < 1 {
 		return h.MakeError("Registration.NewRegistration", "Constructor must return something!")
-	}
-	if typeInfo == nil {
-		return h.MakeError("Registration.NewRegistration", "TypeInfo is nil!")
-	}
-	if typeInfo.Kind() != reflect.Interface {
-		return h.MakeError("Registration.NewRegistration", "Must register interface!")
-	}
-	if !constructorTypeInfo.Out(0).ConvertibleTo(typeInfo) {
-		return h.MakeError("Registration.NewRegistration", "Constructor's first return value must be castible to the typeInfo!")
 	}
 
 	return nil

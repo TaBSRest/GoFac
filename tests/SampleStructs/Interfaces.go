@@ -1,7 +1,11 @@
-package samplestructs
+package SampleStructs
 
 type IIndependentStruct interface {
 	ReturnNameIndependentStruct() string
+}
+
+type IIndependentStruct2 interface {
+	IIndependentStruct
 }
 
 type IStructRelyingOnIndependentStructBase interface {

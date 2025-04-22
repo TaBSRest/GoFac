@@ -1,42 +1,30 @@
 package GoFac
 
 import (
-	"errors"
-	"reflect"
-
-	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
-	s "github.com/TaBSRest/GoFac/internal/Scope"
+	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 )
 
-func RegisterConstructor[T interface{}](
-	containerBuilder *ContainerBuilder,
-	factory interface{},
+func RegisterConstructor(
+	container *ContainerBuilder,
+	factory any,
 	configFunctions ...func(*o.RegistrationOption) error,
 ) error {
-	if containerBuilder.IsBuilt() {
-		return h.MakeError("ContainerBuilder.RegisterConstructor", "Cannot register constructors after the container is built!")
+	if container.IsBuilt() {
+		return te.New("Cannot register constructors after the container is built!")
 	}
 
-	registrar, err := r.NewRegistration(factory, reflect.TypeFor[T](), configFunctions...)
+	registrar, err := r.NewRegistration(factory, configFunctions...)
 	if err != nil {
-		return errors.Join(
-			h.MakeError("GoFac.RegisterConstructor", "Could not register T:"),
-			err,
-		)
+		return te.New("Could not register T").Join(err)
 	}
 
-	name := h.GetName[T]()
-
-	if _, found := containerBuilder.cache[name]; !found {
-		containerBuilder.cache[name] = []*r.Registration{}
-	}
-
-	containerBuilder.cache[name] = append(containerBuilder.cache[name], registrar)
-
-	if registrar.Options.Scope == s.PerContext {
-		containerBuilder.perContextList = append(containerBuilder.perContextList, registrar)
+	for _, key := range registrar.Options.RegistrationType {
+		if _, found := container.cache[key]; !found {
+			container.cache[key] = []*r.Registration{}
+		}
+		container.cache[key] = append(container.cache[key], registrar)
 	}
 
 	return nil

@@ -2,11 +2,7 @@ package Helpers
 
 import "reflect"
 
-func GetName[registrarInterface interface{}]() string {
+func GetName[registrarInterface any]() string {
 	reflection := reflect.TypeFor[registrarInterface]()
-	return GetNameFromType(reflection)
-}
-
-func GetNameFromType(reflection reflect.Type) string {
-	return reflection.PkgPath() + "/" + reflection.Name()
+	return reflection.String()
 }
