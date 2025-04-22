@@ -1,12 +1,10 @@
 package GoFac
 
 import (
-	"reflect"
-
-	r "github.com/TaBSRest/GoFac/internal/Registration"
+	"sync"
 )
 
 type Container struct {
 	*ContainerBuilder
-	SingletonCache map[*r.Registration]*reflect.Value
+	SingletonCache sync.Map
 }

@@ -40,7 +40,8 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "GoFac/internal/Registration.NewRegistration: Cannot Register\n\twith inner error: Error!",
+			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
+	Inner error: Error!`,
 		},
 		"Configuration Function Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -49,7 +50,8 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 					return errors.New("Error!")
 				},
 			},
-			msg: "GoFac/internal/Registration.NewRegistration: Cannot Register\n\twith inner error: Error!",
+			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
+	Inner error: Error!`,
 		},
 		"One of Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -60,7 +62,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 				},
 			},
 			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
-	with inner error: Error!`,
+	Inner error: Error!`,
 		},
 		"Many Configuration Functions Returns Error": {
 			factory:        func(...any) (samplestructs.IIndependentStruct, error) { return &samplestructs.IndependentStruct{}, nil },
@@ -74,8 +76,8 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 				},
 			},
 			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
-	with inner error: Error1!
-	with inner error: Error2!`,
+	Inner error: Error1!
+	Inner error: Error2!`,
 		},
 		"Not Castible": {
 			factory:        func() (samplestructs.IndependentStruct, error) { return samplestructs.IndependentStruct{}, nil },
@@ -83,7 +85,7 @@ func TestRegistration_NewRegistration_ReturnError(t *testing.T) {
 				options.As[http.Handler],
 			},
 			msg: `GoFac/internal/Registration.NewRegistration: Cannot Register
-	with inner error: GoFac/internal/Registration.NewRegistration: The constructor's first return value must be castible to the http.Handler`,
+	Inner error: GoFac/internal/Registration.NewRegistration: The constructor's first return value must be castible to the http.Handler`,
 		},
 	}
 

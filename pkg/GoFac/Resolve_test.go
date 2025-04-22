@@ -1,6 +1,7 @@
 package GoFac
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -342,8 +343,9 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	assert.Nil(result, "Resolved object should not be nil!")
 	assert.NotNil(err, "Should not have any error!")
 	assert.Equal(
-		`GoFac.Resolve: Constructor of github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct threw an error:
-IndependentStruct: Error Forming IndependentStruct!`,
+		`GoFac/pkg/GoFac.Resolve: Error resolving SampleStructs.IIndependentStruct!
+	Inner error: GoFac/pkg/GoFac.runConstructor: Constructor of SampleStructs.IIndependentStruct threw an error
+		Inner error: IndependentStruct: Error Forming IndependentStruct!`,
 		err.Error(),
 		"Error must show that constructor threw an error",
 	)
@@ -422,8 +424,9 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 	assert.Nil(result, "Resolved object should not be nil!")
 	assert.NotNil(err, "Should not have any error!")
 	assert.Equal(
-		`GoFac.Resolve: Could not resolve github.com/TaBSRest/GoFac/tests/SampleStructs/IStructRelyingOnIndependentStruct:
-GoFac.Resolve: github.com/TaBSRest/GoFac/tests/SampleStructs/IIndependentStruct is not registered!`,
+		`GoFac/pkg/GoFac.Resolve: Error resolving SampleStructs.IStructRelyingOnIndependentStruct!
+	Inner error: GoFac/pkg/GoFac.getDependencies: Could not resolve SampleStructs.IStructRelyingOnIndependentStruct:
+		Inner error: GoFac/pkg/GoFac.resolveOne: SampleStructs.IIndependentStruct is not registered!`,
 		err.Error(),
 		"Resolve must specify the cause of failure",
 	)
@@ -557,5 +560,84 @@ func TestContainer_ResolveMultiple_ResolvesSingleton(t *testing.T) {
 	assert.Nil(err)
 
 	assert.Same(a1, as[1], "They must be the same!")
+}
+
+func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
+	NUM_WORKERS := 1000
+	assert := assert.New(t)
+
+	containerBuilder := NewContainerBuilder()
+	if err := RegisterConstructor(
+		containerBuilder,
+		ss.NewIndependentStruct,
+		o.AsSingleton,
+		o.As[ss.IIndependentStruct],
+	); err != nil {
+		assert.Fail(err.Error())
+	}
+	container := containerBuilder.Build()
+
+	var wg sync.WaitGroup
+
+	resolutionChannels := make(chan ss.IIndependentStruct, NUM_WORKERS)
+	resolutionFunc := func() {
+		defer wg.Done()
+		if resolution, err := Resolve[ss.IIndependentStruct](container); err != nil {
+			assert.Fail(err.Error())
+		} else {
+			resolutionChannels <- resolution
+		}
+	}
+
+	for range NUM_WORKERS {
+		wg.Add(1)
+		go resolutionFunc()
+	}
+
+	wg.Wait()
+	close(resolutionChannels)
+
+	var resolutions []ss.IIndependentStruct
+	for resolution := range resolutionChannels {
+		resolutions = append(resolutions, resolution)
+	}
+	firstElem := resolutions[0]
+	for i := 1; i < NUM_WORKERS; i++ {
+		assert.Same(firstElem, resolutions[i])
+	}
+}
+
+func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
+	assert := assert.New(t)
+
+	container := NewContainerBuilder().Build()
+
+	var result ss.IIndependentStruct
+	result, err := Resolve[ss.IIndependentStruct](container)
+
+	assert.Nil(result)
+	assert.Error(err)
+	assert.Equal(
+		err.Error(),
+		`GoFac/pkg/GoFac.Resolve: Error resolving SampleStructs.IIndependentStruct!
+	Inner error: GoFac/pkg/GoFac.resolveOne: SampleStructs.IIndependentStruct is not registered!`,
+	)
+}
+
+func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
+	assert := assert.New(t)
+
+	cb := NewContainerBuilder()
+	_ = RegisterConstructor(cb, ss.NewA, o.As[ss.IIndependentStruct], o.AsSingleton)
+	_ = RegisterConstructor(cb, ss.NewB, o.As[ss.IIndependentStruct], o.AsSingleton)
+
+	container := cb.Build()
+	slice, err := ResolveMultiple[ss.IIndependentStruct](container)
+
+	assert.Nil(err)
+	assert.Len(slice, 2)
+	assert.NotNil(slice[0])
+	assert.NotNil(slice[1])
+	assert.NotSame(slice[0], slice[1], "They should be different singleton instances")
 }
 

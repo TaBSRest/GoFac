@@ -3,6 +3,7 @@ package Registration
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 	c "github.com/TaBSRest/GoFac/internal/Construction"
@@ -13,6 +14,7 @@ import (
 type Registration struct {
 	Construction c.Construction
 	Options  o.RegistrationOption
+	SingletonOnce *sync.Once
 }
 
 func NewRegistration(
@@ -57,6 +59,7 @@ func NewRegistration(
 	return &Registration{
 		Construction: construction,
 		Options:  *options,
+		SingletonOnce: new(sync.Once),
 	}, nil
 }
 

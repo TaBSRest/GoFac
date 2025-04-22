@@ -1,4 +1,4 @@
-package samplestructs
+package SampleStructs
 
 import (
 	"errors"
