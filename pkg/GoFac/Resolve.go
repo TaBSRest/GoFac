@@ -1,8 +1,10 @@
 package GoFac
 
 import (
+	ctx "context"
 	"fmt"
 	"reflect"
+	"sync"
 
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
@@ -13,10 +15,10 @@ import (
 
 type singletonCreationResult struct {
 	value *reflect.Value
-	err error
+	err   error
 }
 
-func Resolve[T any](container *Container) (T, error) {
+func Resolve[T any](context ctx.Context, container *Container) (T, error) {
 	var base T
 
 	tInfo := reflect.TypeFor[T]()
@@ -24,7 +26,7 @@ func Resolve[T any](container *Container) (T, error) {
 		return base, te.New("Use ResolveMultiple for resolving an array or a slice")
 	}
 
-	dependency, err := resolve(container, tInfo)
+	dependency, err := resolve(context, container, tInfo)
 	if err != nil {
 		return base, te.New(fmt.Sprintf("Error resolving %s!", tInfo.String())).Join(err)
 	}
@@ -36,7 +38,7 @@ func Resolve[T any](container *Container) (T, error) {
 	return dependencyT, nil
 }
 
-func ResolveMultiple[T any](container *Container) ([]T, error) {
+func ResolveMultiple[T any](context ctx.Context, container *Container) ([]T, error) {
 	var base []T
 
 	if h.IsArrayOrSlice(reflect.TypeFor[T]()) {
@@ -44,7 +46,7 @@ func ResolveMultiple[T any](container *Container) ([]T, error) {
 	}
 
 	tInfo := reflect.TypeFor[[]T]()
-	dependency, err := resolve(container, tInfo)
+	dependency, err := resolve(context, container, tInfo)
 	if err != nil {
 		return base, te.New(fmt.Sprintf("Error resolving %s!", tInfo.String())).Join(err)
 	}
@@ -64,17 +66,17 @@ func ResolveMultiple[T any](container *Container) ([]T, error) {
 	return resolutions, nil
 }
 
-func resolve(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
+func resolve(context ctx.Context, container *Container, tInfo reflect.Type) (*reflect.Value, error) {
 	if h.IsArrayOrSlice(tInfo) {
 		tmpResolution, err := container.resolveMultiple(context, tInfo.Elem())
 		resolution := reflect.ValueOf(h.DereferencePointedArr(tmpResolution))
 		return &resolution, err
 	} else {
-		return resolveOne(container, tInfo)
+		return resolveOne(context, container, tInfo)
 	}
 }
 
-func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error) {
+func resolveOne(context ctx.Context, container *Container, tInfo reflect.Type) (*reflect.Value, error) {
 	registrations, found := GetRegistrationsFor(container.ContainerBuilder, tInfo)
 	if !found {
 		return nil, te.New(fmt.Sprintf("%s is not registered!", tInfo.String()))
@@ -82,17 +84,17 @@ func resolveOne(container *Container, tInfo reflect.Type) (*reflect.Value, error
 
 	registration := registrations[len(registrations)-1]
 	constructor := registration.Construction
-	dependencies, err := container.getDependencies(tInfo.String(), constructor)
+	dependencies, err := container.getDependencies(context, tInfo.String(), constructor)
 	if err != nil {
 		return nil, err
 	}
 
-	instance, err := resolveInstance(container, registration, constructor, tInfo.String(), dependencies)
+	instance, err := resolveInstance(context, container, registration, constructor, tInfo.String(), dependencies)
 
 	return instance, err
 }
 
-func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Value, error) {
+func (container *Container) resolveMultiple(context ctx.Context, tInfo reflect.Type) ([]*reflect.Value, error) {
 	registrations, found := GetRegistrationsFor(container.ContainerBuilder, tInfo)
 	if !found {
 		return nil, te.New(fmt.Sprintf("%s is not registered!", tInfo.Name()))
@@ -101,14 +103,14 @@ func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Valu
 	var reflections []*reflect.Value
 	for _, registration := range registrations {
 		constructor := registration.Construction
-		dependencies, err := container.getDependencies(tInfo.String(), constructor)
+		dependencies, err := container.getDependencies(context, tInfo.String(), constructor)
 		if err != nil {
 			return nil, err
 		}
 
-		reflection, err := resolveInstance(container, registration, constructor, tInfo.String(), dependencies)
+		reflection, err := resolveInstance(context, container, registration, constructor, tInfo.String(), dependencies)
 		if err != nil {
-			return nil, te.New("Error resolving "+constructor.Info.Name()).Join(err)
+			return nil, te.New("Error resolving " + constructor.Info.Name()).Join(err)
 		}
 		reflections = append(reflections, reflection)
 	}
@@ -117,13 +119,14 @@ func (container *Container) resolveMultiple(tInfo reflect.Type) ([]*reflect.Valu
 }
 
 func (container *Container) getDependencies(
+	context ctx.Context,
 	originalConstructorName string,
 	construction c.Construction,
 ) ([]*reflect.Value, error) {
 	dependencies := make([]*reflect.Value, construction.Info.NumIn())
 	for i := range construction.Info.NumIn() {
 		dependencyInfo := construction.Info.In(i)
-		dependency, err := resolve(container, dependencyInfo)
+		dependency, err := resolve(context, container, dependencyInfo)
 		if err != nil {
 			return nil, te.New("Could not resolve " + originalConstructorName + ":").Join(err)
 		}
@@ -134,27 +137,58 @@ func (container *Container) getDependencies(
 }
 
 func resolveInstance(
+	context ctx.Context,
 	container *Container,
 	registration *r.Registration,
 	ctor c.Construction,
 	name string,
 	dependencies []*reflect.Value,
 ) (*reflect.Value, error) {
-	if registration.Options.Scope == s.Singleton {
+	switch registration.Options.Scope {
+	case s.Singleton:
 		var val *reflect.Value
 		var err error
 		registration.SingletonOnce.Do(func() {
 			val, err = runConstructor(ctor, name, dependencies)
 			result := &singletonCreationResult{
 				value: val,
-				err: err,
+				err:   err,
 			}
 			container.SingletonCache.Store(registration, result)
 		})
 		return container.resolveSingleton(registration)
-	}
 
-	return runConstructor(ctor, name, dependencies)
+	case s.PerContext:
+		context = GetContextWithGoFacCache(context)
+		context = GetContextWithGoFacOnces(context)
+
+		gofacCache := context.Value(GOFAC_CACHE_KEY).(map[*r.Registration]*reflect.Value)
+		gofacOnces := context.Value(GOFAC_ONCES_KEY).(map[*r.Registration]*sync.Once)
+
+		value, found := gofacCache[registration]
+		if found {
+			return value, nil
+		}
+
+		once, found := gofacOnces[registration]
+		if !found {
+			once = &sync.Once{}
+			gofacOnces[registration] = once
+		}
+
+		var val *reflect.Value
+		var err error
+		once.Do(func() {
+			val, err = runConstructor(ctor, name, dependencies)
+			if err == nil {
+				gofacCache[registration] = val
+			}
+		})
+		return val, err
+
+	default:
+		return runConstructor(ctor, name, dependencies)
+	}
 }
 
 func runConstructor(construction c.Construction, name string, dependencies []*reflect.Value) (*reflect.Value, error) {

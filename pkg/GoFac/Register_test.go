@@ -16,7 +16,7 @@ func TestRegister(t *testing.T) {
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor[ss.IIndependentStruct](containerBuilder, ss.NewA, o.PerContext)
+			err = RegisterConstructor(containerBuilder, ss.NewA, o.As[ss.IIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)

@@ -1,6 +1,7 @@
 package GoFac
 
 import (
+	ctx "context"
 	"sync"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor(containerBuilder, ss.NewA, o.As[ss.IIndependentStruct])
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -47,7 +48,7 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor(containerBuilder, ss.NewIndependentStruct)
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -58,8 +59,8 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 	var result *ss.IndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[*ss.IndependentStruct](container)
-		}, 
+			result, err = Resolve[*ss.IndependentStruct](ctx.Background(), container)
+		},
 		"Should not have paniced when resolving interface!",
 	)
 
@@ -81,7 +82,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 				o.As[ss.IIndependentStruct],
 				o.As[ss.IIndependentStruct2],
 			)
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -92,8 +93,8 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
-		}, 
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
+		},
 		"Should not have paniced when resolving interface!",
 	)
 
@@ -104,8 +105,8 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct2](container)
-		}, 
+			result2, err = Resolve[ss.IIndependentStruct2](ctx.Background(), container)
+		},
 		"Should not have paniced when resolving interface!",
 	)
 
@@ -122,7 +123,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor(containerBuilder, ss.NewS, o.As[ss.IIndependentStruct])
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -163,7 +164,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor(containerBuilder, ss.NewS, o.AsSingleton, o.As[ss.IIndependentStruct])
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -216,7 +217,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 				o.As[ss.IIndependentStruct],
 				o.As[ss.IIndependentStruct2],
 			)
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -227,8 +228,8 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
-		}, 
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
+		},
 		"Should not have paniced when resolving interface!",
 	)
 
@@ -243,8 +244,8 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct2](container)
-		}, 
+			result2, err = Resolve[ss.IIndependentStruct2](ctx.Background(), container)
+		},
 		"Should not have paniced when resolving interface!",
 	)
 
@@ -264,7 +265,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 		func() {
 			err = RegisterConstructor(containerBuilder, ss.NewS, o.As[ss.IIndependentStruct], o.AsSingleton)
 			err = RegisterConstructor(containerBuilder, ss.NewStructRelyingOnIndependentStruct, o.As[ss.IStructRelyingOnIndependentStruct])
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -323,7 +324,7 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	assert.NotPanics(
 		func() {
 			err = RegisterConstructor(containerBuilder, ss.NewAReturningError, o.As[ss.IIndependentStruct])
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 
@@ -542,18 +543,18 @@ func TestContainer_ResolveMultiple_ResolvesSingleton(t *testing.T) {
 				o.As[ss.IIndependentStruct],
 				o.AsSingleton,
 			)
-		}, 
+		},
 		"Should not have paniced when registering a constructor!",
 	)
 	assert.Nil(err)
 
 	container := containerBuilder.Build()
 
-	a1, err := Resolve[ss.IIndependentStruct](container)
+	a1, err := Resolve[ss.IIndependentStruct](ctx.Background(), container)
 	assert.NotNil(a1)
 	assert.Nil(err)
 
-	as, err := ResolveMultiple[ss.IIndependentStruct](container)
+	as, err := ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 	assert.NotNil(as)
 	assert.NotEmpty(as)
 	assert.Nil(err)
@@ -581,7 +582,7 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 	resolutionChannels := make(chan ss.IIndependentStruct, NUM_WORKERS)
 	resolutionFunc := func() {
 		defer wg.Done()
-		if resolution, err := Resolve[ss.IIndependentStruct](container); err != nil {
+		if resolution, err := Resolve[ss.IIndependentStruct](ctx.Background(), container); err != nil {
 			assert.Fail(err.Error())
 		} else {
 			resolutionChannels <- resolution
@@ -612,7 +613,7 @@ func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
 	container := NewContainerBuilder().Build()
 
 	var result ss.IIndependentStruct
-	result, err := Resolve[ss.IIndependentStruct](container)
+	result, err := Resolve[ss.IIndependentStruct](ctx.Background(), container)
 
 	assert.Nil(result)
 	assert.Error(err)
@@ -631,7 +632,7 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 	_ = RegisterConstructor(cb, ss.NewB, o.As[ss.IIndependentStruct], o.AsSingleton)
 
 	container := cb.Build()
-	slice, err := ResolveMultiple[ss.IIndependentStruct](container)
+	slice, err := ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 
 	assert.Nil(err)
 	assert.Len(slice, 2)
@@ -639,4 +640,3 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 	assert.NotNil(slice[1])
 	assert.NotSame(slice[0], slice[1], "They should be different singleton instances")
 }
-

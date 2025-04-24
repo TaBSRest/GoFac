@@ -5,15 +5,15 @@ import (
 	"reflect"
 	"sync"
 
-	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 )
 
 type Registration struct {
-	Construction c.Construction
-	Options  o.RegistrationOption
+	Construction  c.Construction
+	Options       o.RegistrationOption
 	SingletonOnce *sync.Once
 }
 
@@ -26,19 +26,19 @@ func NewRegistration(
 		return nil, err
 	}
 
-	var options *o.RegistrationOption = o.NewRegistrationOption()
+	var option *o.RegistrationOption = o.NewRegistrationOption()
 	var errors []error
 	for _, config := range ConfigurationFunctions {
-		if err := config(options); err != nil {
+		if err := config(option); err != nil {
 			errors = append(errors, err)
 		}
 	}
 
-	if len(options.RegistrationType) == 0 {
-		options.RegistrationType = append(options.RegistrationType, constructorTypeInfo.Out(0))
+	if len(option.RegistrationType) == 0 {
+		option.RegistrationType = append(option.RegistrationType, constructorTypeInfo.Out(0))
 	}
 
-	for _, tInfo := range options.RegistrationType {
+	for _, tInfo := range option.RegistrationType {
 		if !constructorTypeInfo.Out(0).ConvertibleTo(tInfo) {
 			errors = append(
 				errors,
@@ -57,13 +57,13 @@ func NewRegistration(
 	}
 
 	return &Registration{
-		Construction: construction,
-		Options:  *options,
+		Construction:  construction,
+		Options:       *option,
 		SingletonOnce: new(sync.Once),
 	}, nil
 }
 
-func constructorErrorChecks(constructor any, constructorTypeInfo reflect.Type) (error) {
+func constructorErrorChecks(constructor any, constructorTypeInfo reflect.Type) error {
 	if constructor == nil {
 		return h.MakeError("Registration.NewRegistration", "Constructor is nil!")
 	}
