@@ -65,3 +65,20 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		assert.Fail(err.Error())
 	}
 }
+
+func TestGetRegistrations_ReturnedValuesAreImmutable(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := gf.NewContainerBuilder()
+	gf.RegisterConstructor(containerBuilder, ss.NewIndependentStruct, Options.As[ss.IIndependentStruct])
+	gf.RegisterConstructor(containerBuilder, ss.NewA)
+	regs, found := gf.GetRegistrations[ss.IIndependentStruct](containerBuilder)
+	assert.True(found)
+	assert.Equal(2, len(regs))
+	regs = regs[:1]
+
+	newCopy, found := gf.GetRegistrations[ss.IIndependentStruct](containerBuilder)
+	assert.True(found)
+	assert.Equal(2, len(newCopy))
+}
+
