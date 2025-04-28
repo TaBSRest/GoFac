@@ -11,7 +11,7 @@ import (
 
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 	s "github.com/TaBSRest/GoFac/internal/Scope"
-	options "github.com/TaBSRest/GoFac/pkg/GoFac/Options"
+	options "github.com/TaBSRest/GoFac/pkg/Options"
 	samplestructs "github.com/TaBSRest/GoFac/tests/SampleStructs"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
