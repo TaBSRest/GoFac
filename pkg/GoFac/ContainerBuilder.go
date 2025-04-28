@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	r "github.com/TaBSRest/GoFac/internal/Registration"
+	te "github.com/TaBSRest/GoFac/internal/TaBSError"
+	"github.com/TaBSRest/GoFac/pkg/GoFac/Options"
 )
 
 type ContainerBuilder struct {
@@ -21,28 +23,37 @@ func NewContainerBuilder() *ContainerBuilder {
 
 func GetRegistrations[T any](cb *ContainerBuilder) ([]*r.Registration, bool) {
 	key := reflect.TypeFor[T]()
-	registrationPointer, found := cb.cache[key]
-	var registrations []*r.Registration = make([]*r.Registration, len(registrationPointer))
-	for index, ptr := range registrationPointer {
-		registrations[index] = ptr
-	}
+	registrations, found := cb.cache[key]
 	return registrations, found
 }
 
 func GetRegistrationsFor(cb *ContainerBuilder, registrationType reflect.Type) ([]*r.Registration, bool) {
-	registrationPointer, found := cb.cache[registrationType]
-	var registrations []*r.Registration = make([]*r.Registration, len(registrationPointer))
-	for index, ptr := range registrationPointer {
-		registrations[index] = ptr
-	}
+	registrations, found := cb.cache[registrationType]
 	return registrations, found
 }
 
-func (cb *ContainerBuilder) Build() *Container {
-	return &Container {
-		ContainerBuilder: cb,
-		SingletonCache: sync.Map{},
+func (cb *ContainerBuilder) Build() (*Container, error) {
+	if cb.built {
+		return nil, te.New("This ContainerBuilder is already built!")
 	}
+
+	container := &Container{
+		ContainerBuilder: cb,
+		SingletonCache:   sync.Map{},
+	}
+
+	err := RegisterConstructor(
+		cb,
+		func() *Container { return container },
+		Options.AsSingleton,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	cb.built = true
+
+	return container, nil
 }
 
 func (cb *ContainerBuilder) IsBuilt() bool {
