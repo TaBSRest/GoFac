@@ -72,6 +72,37 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 	assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct(), "Functions should be able to run")
 }
 
+func TestResolveNamed_AbleToResolve(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := ContainerBuilder.New()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = containerBuilder.Register(ss.NewIndependentStruct, o.Named("hi!"), o.As[ss.IIndependentStruct])
+		},
+		"Should not have paniced when registering a constructor!",
+	)
+	assert.Nil(err, "No Error should have happened when registering")
+
+	container, err := containerBuilder.Build()
+	assert.Nil(err)
+
+	var result ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result, err = GoFac.ResolveNamed[ss.IIndependentStruct](container, "hi!")
+		},
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result, "Resolved object should not be nil!")
+	if err != nil {
+		assert.Fail(err.Error())
+	}
+	assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct(), "Functions should be able to run")
+}
+
 func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	assert := assert.New(t)
 
@@ -433,7 +464,7 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 	assert.Equal(
 		`GoFac.Resolve: Error resolving SampleStructs.IStructRelyingOnIndependentStruct!
 	Inner error: GoFac.getDependencies: Could not resolve SampleStructs.IStructRelyingOnIndependentStruct:
-		Inner error: GoFac.resolveOne: SampleStructs.IIndependentStruct is not registered!`,
+		Inner error: GoFac.resolve: SampleStructs.IIndependentStruct is not registered!`,
 		err.Error(),
 		"Resolve must specify the cause of failure",
 	)
@@ -624,7 +655,7 @@ func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
 	assert.Equal(
 		err.Error(),
 		`GoFac.Resolve: Error resolving SampleStructs.IIndependentStruct!
-	Inner error: GoFac.resolveOne: SampleStructs.IIndependentStruct is not registered!`,
+	Inner error: GoFac.resolve: SampleStructs.IIndependentStruct is not registered!`,
 	)
 }
 

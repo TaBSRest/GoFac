@@ -9,12 +9,15 @@ import (
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	gi "github.com/TaBSRest/GoFac/internal/RegistrationOption/GroupInfo"
 )
 
 type Registration struct {
 	Construction c.Construction
 	Options  o.RegistrationOption
 	SingletonOnce *sync.Once
+	Name string
+	Group *gi.GroupInfo
 }
 
 func NewRegistration(
