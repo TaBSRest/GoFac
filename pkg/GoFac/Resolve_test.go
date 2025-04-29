@@ -31,7 +31,7 @@ func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IIndependentStruct](container)
+			result, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -61,7 +61,7 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 	var result *ss.IndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[*ss.IndependentStruct](container)
+			result, err = Resolve[*ss.IndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -96,7 +96,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -108,7 +108,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct2](container)
+			result2, err = Resolve[ss.IIndependentStruct2](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -138,7 +138,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -150,7 +150,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct](container)
+			result2, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -180,7 +180,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -196,7 +196,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct](container)
+			result2, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -234,7 +234,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -250,7 +250,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct2](container)
+			result2, err = Resolve[ss.IIndependentStruct2](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -283,7 +283,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -299,7 +299,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct](container)
+			result2, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -313,7 +313,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result3 ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result3, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result3, err = Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -343,7 +343,7 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IIndependentStruct](container)
+			result, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -388,7 +388,7 @@ func TestResolve_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -426,7 +426,7 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -480,7 +480,7 @@ func TestResolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T) {
 	var result ss.IStructRelyingOnIndependentStructs
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IStructRelyingOnIndependentStructs](container)
+			result, err = Resolve[ss.IStructRelyingOnIndependentStructs](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -525,7 +525,7 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 	var result []ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = ResolveMultiple[ss.IIndependentStruct](container)
+			result, err = ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -628,7 +628,7 @@ func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
-	result, err = Resolve[ss.IIndependentStruct](container)
+	result, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 
 	assert.Nil(result)
 	assert.Error(err)
@@ -648,7 +648,7 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 
 	container, err := cb.Build()
 	assert.Nil(err)
-	slice, err := ResolveMultiple[ss.IIndependentStruct](container)
+	slice, err := ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 
 	assert.Nil(err)
 	assert.Len(slice, 2)

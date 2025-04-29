@@ -1,6 +1,7 @@
 package GoFac_test
 
 import (
+	ctx "context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,7 +44,7 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 	gf.RegisterConstructor(
 		containerBuilder,
 		func(container *gf.Container) (ss.IIndependentStruct, error) {
-			return gf.Resolve[*ss.IndependentStruct](container)
+			return gf.Resolve[*ss.IndependentStruct](ctx.Background(), container)
 		},
 		Options.As[ss.IIndependentStruct],
 	)
@@ -53,13 +54,13 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		assert.Fail(err.Error())
 	}
 
-	sample1, err := gf.Resolve[*ss.IndependentStruct](container)
+	sample1, err := gf.Resolve[*ss.IndependentStruct](ctx.Background(), container)
 	assert.NotNil(sample1)
 	if err != nil {
 		assert.Fail(err.Error())
 	}
 
-	sample2, err := gf.Resolve[ss.IIndependentStruct](container)
+	sample2, err := gf.Resolve[ss.IIndependentStruct](ctx.Background(), container)
 	assert.NotNil(sample2)
 	if err != nil {
 		assert.Fail(err.Error())
