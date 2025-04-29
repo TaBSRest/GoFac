@@ -158,31 +158,29 @@ func resolveInstance(
 		})
 		return container.resolveSingleton(registration)
 	case s.PerContext:
-		context = GetContextWithGoFacCache(context)
-		context = GetContextWithGoFacOnces(context)
+		context = GetContextWithGoFacContextCache(context)
 
-		gofacCache := context.Value(GOFAC_CACHE_KEY).(map[*r.Registration]*reflect.Value)
-		gofacOnces := context.Value(GOFAC_ONCES_KEY).(map[*r.Registration]*sync.Once)
+		contextValue := context.Value(GOFAC_KEY).(map[*r.Registration]ContextCache)
 
-		value, found := gofacCache[registration]
-		if found {
-			return value, nil
+		contextCache, found := contextValue[registration]
+		if found && contextCache.Cache != nil {
+			return contextCache.Cache, nil
 		}
 
-		once, found := gofacOnces[registration]
-		if !found {
-			once = &sync.Once{}
-			gofacOnces[registration] = once
+		if contextCache.Once == nil {
+			contextCache.Once = &sync.Once{}
 		}
 
 		var val *reflect.Value
 		var err error
-		once.Do(func() {
+		contextCache.Once.Do(func() {
 			val, err = runConstructor(ctor, name, dependencies)
 			if err == nil {
-				gofacCache[registration] = val
+				contextCache.Cache = val
+				contextValue[registration] = contextCache
 			}
 		})
+
 		return val, err
 	default:
 		return runConstructor(ctor, name, dependencies)

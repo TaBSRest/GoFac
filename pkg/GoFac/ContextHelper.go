@@ -8,54 +8,23 @@ import (
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 )
 
+type ContextCache struct {
+	Cache *reflect.Value
+	Once  *sync.Once
+}
+
 type contextKey string
 
-const (
-	GOFAC_CACHE_KEY = contextKey("GoFacCache")
-	GOFAC_ONCES_KEY = contextKey("GoFacOnces")
-)
+const GOFAC_KEY = contextKey("GoFac")
 
-func GetContextWithGoFacCache(context ctx.Context) ctx.Context {
-	if !doesContextHaveGoFacCache(context) {
-		context = ctx.WithValue(context, GOFAC_CACHE_KEY, make(map[*r.Registration]*reflect.Value))
+func GetContextWithGoFacContextCache(context ctx.Context) ctx.Context {
+	if !isContextRegisteredToGoFac(context) {
+		context = ctx.WithValue(context, GOFAC_KEY, make(map[*r.Registration]ContextCache))
 	}
 
 	return context
 }
 
-func GetContextWithGoFacOnces(context ctx.Context) ctx.Context {
-	if !doesContextHaveGoFacOnces(context) {
-		context = ctx.WithValue(context, GOFAC_ONCES_KEY, make(map[*r.Registration]*sync.Once))
-	}
-
-	return context
+func isContextRegisteredToGoFac(context ctx.Context) bool {
+	return context.Value(GOFAC_KEY) != nil
 }
-
-func doesContextHaveGoFacCache(context ctx.Context) bool {
-	return context.Value(GOFAC_CACHE_KEY) != nil
-}
-
-func doesContextHaveGoFacOnces(context ctx.Context) bool {
-	return context.Value(GOFAC_ONCES_KEY) != nil
-}
-
-// type ContextCache struct {
-// 	Cache *reflect.Value
-// 	Once  *sync.Once
-// }
-
-// type contextKey string
-
-// const GOFAC_KEY = contextKey("GoFac")
-
-// func GetContextWithGoFacContextCache(context ctx.Context) ctx.Context {
-// 	if !isContextRegisteredToGoFac(context) {
-// 		context = ctx.WithValue(context, GOFAC_KEY, make(map[*r.Registration]ContextCache))
-// 	}
-
-// 	return context
-// }
-
-// func isContextRegisteredToGoFac(context ctx.Context) bool {
-// 	return context.Value(GOFAC_KEY) != nil
-// }
