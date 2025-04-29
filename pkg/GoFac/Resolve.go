@@ -157,7 +157,6 @@ func resolveInstance(
 			container.SingletonCache.Store(registration, result)
 		})
 		return container.resolveSingleton(registration)
-
 	case s.PerContext:
 		context = GetContextWithGoFacCache(context)
 		context = GetContextWithGoFacOnces(context)
@@ -185,7 +184,6 @@ func resolveInstance(
 			}
 		})
 		return val, err
-
 	default:
 		return runConstructor(ctor, name, dependencies)
 	}

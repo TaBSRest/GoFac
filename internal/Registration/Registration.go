@@ -26,19 +26,19 @@ func NewRegistration(
 		return nil, err
 	}
 
-	var option *o.RegistrationOption = o.NewRegistrationOption()
+	var options *o.RegistrationOption = o.NewRegistrationOption()
 	var errors []error
 	for _, config := range ConfigurationFunctions {
-		if err := config(option); err != nil {
+		if err := config(options); err != nil {
 			errors = append(errors, err)
 		}
 	}
 
-	if len(option.RegistrationType) == 0 {
-		option.RegistrationType = append(option.RegistrationType, constructorTypeInfo.Out(0))
+	if len(options.RegistrationType) == 0 {
+		options.RegistrationType = append(options.RegistrationType, constructorTypeInfo.Out(0))
 	}
 
-	for _, tInfo := range option.RegistrationType {
+	for _, tInfo := range options.RegistrationType {
 		if !constructorTypeInfo.Out(0).ConvertibleTo(tInfo) {
 			errors = append(
 				errors,
@@ -58,7 +58,7 @@ func NewRegistration(
 
 	return &Registration{
 		Construction:  construction,
-		Options:       *option,
+		Options:       *options,
 		SingletonOnce: new(sync.Once),
 	}, nil
 }

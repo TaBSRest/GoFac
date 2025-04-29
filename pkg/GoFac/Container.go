@@ -5,6 +5,6 @@ import (
 )
 
 type Container struct {
-	ContainerBuilder *ContainerBuilder
-	SingletonCache   sync.Map
+	*ContainerBuilder
+	SingletonCache sync.Map
 }

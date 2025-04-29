@@ -26,9 +26,10 @@ func RegisterConstructor(
 			containerBuilder.cache[key] = []*r.Registration{}
 		}
 		containerBuilder.cache[key] = append(containerBuilder.cache[key], registrar)
-		if registrar.Options.Scope == s.PerContext {
-			containerBuilder.perContextOnces = append(containerBuilder.perContextOnces, registrar)
-		}
+	}
+
+	if registrar.Options.Scope == s.PerContext {
+		containerBuilder.perContextRegistrations[registrar] = struct{}{}
 	}
 
 	return nil
