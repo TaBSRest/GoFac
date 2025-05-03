@@ -85,6 +85,12 @@ func TestResolveNamed_AbleToResolve(t *testing.T) {
 	)
 	assert.Nil(err, "No Error should have happened when registering")
 
+	regs, err := containerBuilder.GetNamedRegistration("hi!")
+	if err != nil {
+		assert.Fail(err.Error())
+	}
+	assert.NotNil(regs)
+
 	container, err := containerBuilder.Build()
 	assert.Nil(err)
 

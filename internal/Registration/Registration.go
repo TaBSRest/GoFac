@@ -29,7 +29,7 @@ func NewRegistration(
 		return nil, err
 	}
 
-	var options *o.RegistrationOption = o.NewRegistrationOption()
+	var options  = o.NewRegistrationOption()
 	var errors []error
 	for _, config := range ConfigurationFunctions {
 		if err := config(options); err != nil {
@@ -62,6 +62,7 @@ func NewRegistration(
 	return &Registration{
 		Construction: construction,
 		Options:  *options,
+		Name: options.RegistrationName,
 		SingletonOnce: new(sync.Once),
 	}, nil
 }
