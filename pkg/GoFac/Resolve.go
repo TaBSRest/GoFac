@@ -4,7 +4,6 @@ import (
 	ctx "context"
 	"fmt"
 	"reflect"
-	"sync"
 
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
@@ -18,6 +17,7 @@ type singletonCreationResult struct {
 	err   error
 }
 
+// You need to do error handling: check context
 func Resolve[T any](context ctx.Context, container *Container) (T, error) {
 	var base T
 
@@ -149,7 +149,7 @@ func resolveInstance(
 		var val *reflect.Value
 		var err error
 		registration.SingletonOnce.Do(func() {
-			val, err = runConstructor(ctor, name, dependencies)
+			val, err = RunConstructor(ctor, name, dependencies)
 			result := &singletonCreationResult{
 				value: val,
 				err:   err,
@@ -160,11 +160,12 @@ func resolveInstance(
 	case s.PerContext:
 		return resolvePerContext(context, registration, ctor, name, dependencies)
 	default:
-		return runConstructor(ctor, name, dependencies)
+		return RunConstructor(ctor, name, dependencies)
 	}
 }
 
-func runConstructor(construction c.Construction, name string, dependencies []*reflect.Value) (*reflect.Value, error) {
+// Make it public.
+func RunConstructor(construction c.Construction, name string, dependencies []*reflect.Value) (*reflect.Value, error) {
 	types := make([]reflect.Type, construction.Info.NumIn())
 	for i := range construction.Info.NumIn() {
 		types[i] = construction.Info.In(i)
@@ -201,28 +202,121 @@ func resolvePerContext(
 	name string,
 	dependencies []*reflect.Value,
 ) (*reflect.Value, error) {
-	context = GetContextWithGoFacContextCache(context)
-
-	contextValue := context.Value(GOFAC_KEY).(map[*r.Registration]ContextCache)
-
-	contextCache, found := contextValue[registration]
-	if found && contextCache.Cache != nil {
-		return contextCache.Cache, nil
+	if context.Value(GOFAC_CONTEXT_ID_KEY) == nil {
+		return nil, te.New("The context is not registered to GoFac.")
 	}
 
-	if contextCache.Once == nil {
-		contextCache.Once = &sync.Once{}
-	}
+	contextValue := context.Value(GOFAC_CONTEXT_ID_KEY).(map[*r.Registration]ContextRegistration)
+
+	// contextRegistration, found := contextValue[registration]
+	// if !found {
+	// 	return nil, te.New("")
+	// }
+
+	// if contextRegistration.Instance != nil {
+	// 	return contextRegistration.Instance, nil
+	// }
+
+	// if contextRegistration.Once == nil {
+	// 	return nil, te.New("")
+	// }
 
 	var val *reflect.Value
 	var err error
-	contextCache.Once.Do(func() {
-		val, err = runConstructor(ctor, name, dependencies)
+	contextRegistration.Once.Do(func() {
+		val, err = RunConstructor(ctor, name, dependencies)
 		if err == nil {
-			contextCache.Cache = val
-			contextValue[registration] = contextCache
+			contextRegistration.Instance = val
+			contextValue[registration] = contextRegistration
 		}
 	})
 
 	return val, err
 }
+
+// Strategy Pattern
+// Goal: high coupling => low coupling
+// Important: same input and output
+
+// type ResolutionStrategy interface {
+// 	ResolveInstance(
+// 		context ctx.Context,
+// 		container *Container,
+// 		registration *r.Registration,
+// 		ctor c.Construction,
+// 		name string,
+// 		dependencies []*reflect.Value,
+// 	) (*reflect.Value, error)
+// }
+
+// type SingletonStrategy struct{}
+
+// func (s *SingletonStrategy) Resolve(
+// 	context ctx.Context,
+// 	container *Container,
+// 	registration *r.Registration,
+// 	ctor c.Construction,
+// 	name string,
+// 	dependencies []*reflect.Value,
+// ) (*reflect.Value, error) {
+// 	var val *reflect.Value
+// 	var err error
+// 	registration.SingletonOnce.Do(func() {
+// 		val, err = RunConstructor(ctor, name, dependencies)
+// 		result := &singletonCreationResult{
+// 			value: val,
+// 			err:   err,
+// 		}
+// 		container.SingletonCache.Store(registration, result)
+// 	})
+// 	return container.resolveSingleton(registration)
+// }
+
+// type PerContextStrategy struct{}
+
+// func (p *PerContextStrategy) Resolve(
+// 	context ctx.Context,
+// 	container *Container,
+// 	registration *r.Registration,
+// 	ctor c.Construction,
+// 	name string,
+// 	dependencies []*reflect.Value,
+// ) (*reflect.Value, error) {
+// 	return resolvePerContext(context, registration, ctor, name, dependencies)
+// }
+
+// type DefaultStrategy struct{}
+
+// func (d *DefaultStrategy) Resolve(
+// 	context ctx.Context,
+// 	container *Container,
+// 	registration *r.Registration,
+// 	ctor c.Construction,
+// 	name string,
+// 	dependencies []*reflect.Value,
+// ) (*reflect.Value, error) {
+// 	return RunConstructor(ctor, name, dependencies)
+// }
+
+// func resolveInstance(
+// 	context ctx.Context,
+// 	container *Container,
+// 	registration *r.Registration,
+// 	ctor c.Construction,
+// 	name string,
+// 	dependencies []*reflect.Value,
+// ) (*reflect.Value, error) {
+// 	// Map of strategies for each scope type
+// 	strategies := map[s.Scope]ResolutionStrategy{
+// 		s.Singleton:    &SingletonStrategy{},
+// 		s.PerContext:   &PerContextStrategy{},
+// 		s.DefaultScope: &DefaultStrategy{},
+// 	}
+
+// 	strategy, exists := strategies[registration.Options.Scope]
+// 	if !exists {
+// 		return nil, te.New(fmt.Sprintf("Unknown scope: %v", registration.Options.Scope))
+// 	}
+
+// 	return strategy.Resolve(context, container, registration, ctor, name, dependencies)
+// }

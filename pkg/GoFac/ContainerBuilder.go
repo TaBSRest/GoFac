@@ -12,14 +12,15 @@ import (
 type ContainerBuilder struct {
 	built                   bool
 	cache                   map[reflect.Type][]*r.Registration
-	perContextRegistrations map[*r.Registration]struct{}
+	perContextRegistrations []*r.Registration
 }
 
 func NewContainerBuilder() *ContainerBuilder {
+	var perContextRegistrations []*r.Registration
 	return &ContainerBuilder{
 		built:                   false,
 		cache:                   make(map[reflect.Type][]*r.Registration),
-		perContextRegistrations: make(map[*r.Registration]struct{}),
+		perContextRegistrations: perContextRegistrations,
 	}
 }
 

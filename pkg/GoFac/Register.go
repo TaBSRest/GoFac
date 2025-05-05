@@ -29,7 +29,7 @@ func RegisterConstructor(
 	}
 
 	if registrar.Options.Scope == s.PerContext {
-		containerBuilder.perContextRegistrations[registrar] = struct{}{}
+		containerBuilder.perContextRegistrations = append(containerBuilder.perContextRegistrations, registrar)
 	}
 
 	return nil
