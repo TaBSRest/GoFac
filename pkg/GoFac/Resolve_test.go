@@ -1,14 +1,21 @@
 package GoFac
 
 import (
+	ctx "context"
 	"sync"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	o "github.com/TaBSRest/GoFac/pkg/GoFac/Options"
+	AsOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/As"
+	ScopeOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/Scope"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
+
+type MockRealUUIDProvider struct{}
+
+func (MockRealUUIDProvider) New() uuid.UUID { return uuid.New() }
 
 func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	assert := assert.New(t)
@@ -17,20 +24,20 @@ func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewA, o.As[ss.IIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewA, AsOptions.As[ss.IIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IIndependentStruct](container)
+			result, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -54,13 +61,13 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result *ss.IndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[*ss.IndependentStruct](container)
+			result, err = Resolve[*ss.IndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -80,8 +87,8 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewIndependentStruct,
-				o.As[ss.IIndependentStruct],
-				o.As[ss.IIndependentStruct2],
+				AsOptions.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct2],
 			)
 		},
 		"Should not have paniced when registering a constructor!",
@@ -89,13 +96,13 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -107,7 +114,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct2](container)
+			result2, err = Resolve[ss.IIndependentStruct2](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -124,20 +131,20 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewS, o.As[ss.IIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewS, AsOptions.As[ss.IIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -149,7 +156,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct](container)
+			result2, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -166,20 +173,20 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewS, o.AsSingleton, o.As[ss.IIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewS, ScopeOptions.AsSingleton, AsOptions.As[ss.IIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -195,7 +202,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct](container)
+			result2, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -217,9 +224,9 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewS,
-				o.AsSingleton,
-				o.As[ss.IIndependentStruct],
-				o.As[ss.IIndependentStruct2],
+				ScopeOptions.AsSingleton,
+				AsOptions.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct2],
 			)
 		},
 		"Should not have paniced when registering a constructor!",
@@ -227,13 +234,13 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -249,7 +256,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct2](container)
+			result2, err = Resolve[ss.IIndependentStruct2](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -268,21 +275,21 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewS, o.As[ss.IIndependentStruct], o.AsSingleton)
-			err = RegisterConstructor(containerBuilder, ss.NewStructRelyingOnIndependentStruct, o.As[ss.IStructRelyingOnIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewS, AsOptions.As[ss.IIndependentStruct], ScopeOptions.AsSingleton)
+			err = RegisterConstructor(containerBuilder, ss.NewStructRelyingOnIndependentStruct, AsOptions.As[ss.IStructRelyingOnIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = Resolve[ss.IIndependentStruct](container)
+			result1, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -298,7 +305,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = Resolve[ss.IIndependentStruct](container)
+			result2, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -312,7 +319,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result3 ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result3, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result3, err = Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -329,20 +336,20 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewAReturningError, o.As[ss.IIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewAReturningError, AsOptions.As[ss.IIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IIndependentStruct](container)
+			result, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -351,7 +358,7 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	assert.NotNil(err, "Should not have any error!")
 	assert.Equal(
 		`GoFac/pkg/GoFac.Resolve: Error resolving SampleStructs.IIndependentStruct!
-	Inner error: GoFac/pkg/GoFac.runConstructor: Constructor of SampleStructs.IIndependentStruct threw an error
+	Inner error: GoFac/pkg/GoFac.RunConstructor: Constructor of SampleStructs.IIndependentStruct threw an error
 		Inner error: IndependentStruct: Error Forming IndependentStruct!`,
 		err.Error(),
 		"Error must show that constructor threw an error",
@@ -365,11 +372,11 @@ func TestResolve_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) 
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewA, o.As[ss.IIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewA, AsOptions.As[ss.IIndependentStruct])
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewStructRelyingOnIndependentStruct,
-				o.As[ss.IStructRelyingOnIndependentStruct],
+				AsOptions.As[ss.IStructRelyingOnIndependentStruct],
 			)
 		},
 		"Should not have paniced when registering a constructor!",
@@ -381,13 +388,13 @@ func TestResolve_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) 
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -407,7 +414,7 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewStructRelyingOnIndependentStruct,
-				o.As[ss.IStructRelyingOnIndependentStruct],
+				AsOptions.As[ss.IStructRelyingOnIndependentStruct],
 			)
 		},
 		"Should not have paniced when registering a constructor!",
@@ -419,13 +426,13 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](container)
+			result, err = Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -451,17 +458,17 @@ func TestResolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T) {
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewA,
-				o.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct],
 			)
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewB,
-				o.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct],
 			)
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewStructRelyingOnIndependentStructs,
-				o.As[ss.IStructRelyingOnIndependentStructs],
+				AsOptions.As[ss.IStructRelyingOnIndependentStructs],
 			)
 		},
 		"Should not have paniced when registering a constructor!",
@@ -473,13 +480,13 @@ func TestResolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T) {
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result ss.IStructRelyingOnIndependentStructs
 	assert.NotPanics(
 		func() {
-			result, err = Resolve[ss.IStructRelyingOnIndependentStructs](container)
+			result, err = Resolve[ss.IStructRelyingOnIndependentStructs](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -501,12 +508,12 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewA,
-				o.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct],
 			)
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewB,
-				o.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct],
 			)
 		},
 		"Should not have paniced when registering a constructor!",
@@ -518,13 +525,13 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result []ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = ResolveMultiple[ss.IIndependentStruct](container)
+			result, err = ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -546,27 +553,27 @@ func TestContainer_ResolveMultiple_ResolvesSingleton(t *testing.T) {
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewB,
-				o.As[ss.IIndependentStruct],
+				AsOptions.As[ss.IIndependentStruct],
 			)
 			err = RegisterConstructor(
 				containerBuilder,
 				ss.NewA,
-				o.As[ss.IIndependentStruct],
-				o.AsSingleton,
+				AsOptions.As[ss.IIndependentStruct],
+				ScopeOptions.AsSingleton,
 			)
 		},
 		"Should not have paniced when registering a constructor!",
 	)
 	assert.Nil(err)
 
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
-	a1, err := Resolve[ss.IIndependentStruct](container)
+	a1, err := Resolve[ss.IIndependentStruct](ctx.Background(), container)
 	assert.NotNil(a1)
 	assert.Nil(err)
 
-	as, err := ResolveMultiple[ss.IIndependentStruct](container)
+	as, err := ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 	assert.NotNil(as)
 	assert.NotEmpty(as)
 	assert.Nil(err)
@@ -582,12 +589,12 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 	if err := RegisterConstructor(
 		containerBuilder,
 		ss.NewIndependentStruct,
-		o.AsSingleton,
-		o.As[ss.IIndependentStruct],
+		ScopeOptions.AsSingleton,
+		AsOptions.As[ss.IIndependentStruct],
 	); err != nil {
 		assert.Fail(err.Error())
 	}
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var wg sync.WaitGroup
@@ -595,7 +602,7 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 	resolutionChannels := make(chan ss.IIndependentStruct, NUM_WORKERS)
 	resolutionFunc := func() {
 		defer wg.Done()
-		if resolution, err := Resolve[ss.IIndependentStruct](container); err != nil {
+		if resolution, err := Resolve[ss.IIndependentStruct](ctx.Background(), container); err != nil {
 			assert.Fail(err.Error())
 		} else {
 			resolutionChannels <- resolution
@@ -623,11 +630,11 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
 	assert := assert.New(t)
 
-	container, err := NewContainerBuilder().Build()
+	container, err := NewContainerBuilder().Build(MockRealUUIDProvider{})
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
-	result, err = Resolve[ss.IIndependentStruct](container)
+	result, err = Resolve[ss.IIndependentStruct](ctx.Background(), container)
 
 	assert.Nil(result)
 	assert.Error(err)
@@ -642,12 +649,12 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 	assert := assert.New(t)
 
 	cb := NewContainerBuilder()
-	_ = RegisterConstructor(cb, ss.NewA, o.As[ss.IIndependentStruct], o.AsSingleton)
-	_ = RegisterConstructor(cb, ss.NewB, o.As[ss.IIndependentStruct], o.AsSingleton)
+	_ = RegisterConstructor(cb, ss.NewA, AsOptions.As[ss.IIndependentStruct], ScopeOptions.AsSingleton)
+	_ = RegisterConstructor(cb, ss.NewB, AsOptions.As[ss.IIndependentStruct], ScopeOptions.AsSingleton)
 
-	container, err := cb.Build()
+	container, err := cb.Build(MockRealUUIDProvider{})
 	assert.Nil(err)
-	slice, err := ResolveMultiple[ss.IIndependentStruct](container)
+	slice, err := ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 
 	assert.Nil(err)
 	assert.Len(slice, 2)
