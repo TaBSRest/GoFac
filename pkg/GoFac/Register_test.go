@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	o "github.com/TaBSRest/GoFac/pkg/GoFac/Options"
+	AsOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/As"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
 
@@ -16,7 +16,7 @@ func TestRegister(t *testing.T) {
 	var err error
 	assert.NotPanics(
 		func() {
-			err = RegisterConstructor(containerBuilder, ss.NewA, o.As[ss.IIndependentStruct])
+			err = RegisterConstructor(containerBuilder, ss.NewA, AsOptions.As[ss.IIndependentStruct])
 		},
 		"Should not have paniced when registering a constructor!",
 	)

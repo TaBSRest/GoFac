@@ -6,15 +6,16 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/google/uuid"
-
 	r "github.com/TaBSRest/GoFac/internal/Registration"
-	// i "github.com/TaBSRest/TaBSCore/interfaces"
 )
 
 type ContextRegistration struct {
 	Instance *reflect.Value
 	Once     *sync.Once
+}
+
+type contextIDFinalizer struct {
+	contextID string
 }
 
 type contextKey string
@@ -24,36 +25,50 @@ const (
 	GOFAC_FINALIZER_KEY  = contextKey("GoFacFinalizer")
 )
 
-var registry sync.Map // map[string]map[*r.Registration]ContextRegistration
+var (
+	registry sync.Map // map[string]map[*r.Registration]ContextRegistration
+	mutex    sync.Mutex
+)
 
-type contextIDFinalizer struct {
-	contextID string
-}
-
-func RegisterContextToGoFac(context ctx.Context) ctx.Context {
-	if id, found := context.Value(GOFAC_CONTEXT_ID_KEY).(string); found {
-		if _, found := registry.Load(id); found {
-			return context
-		}
+func (c *Container) RegisterContext(context ctx.Context) ctx.Context {
+	if c.BuildOption.IsRegisterContextRunningConcurrently {
+		mutex.Lock()
+		defer mutex.Unlock()
 	}
 
-	// uuidString := i.uuidProvider.New().String()
-	uuidString := uuid.NewString()
+	id, found := context.Value(GOFAC_CONTEXT_ID_KEY).(string)
+	_, exists := registry.Load(id)
+	if found && exists {
+		return context
+	}
 
-	registry.Store(uuidString, make(map[*r.Registration]ContextRegistration))
+	uuidString := c.BuildOption.UUIDProvider.New().String()
+	metadata := make(map[*r.Registration]*ContextRegistration)
+	for _, registration := range c.perContextRegistrations {
+		metadata[registration] = &ContextRegistration{
+			Instance: nil,
+			Once:     &sync.Once{},
+		}
+	}
+	registry.Store(uuidString, metadata)
+	context = ctx.WithValue(context, GOFAC_CONTEXT_ID_KEY, uuidString)
 
-	finalizer := &contextIDFinalizer{contextID: uuidString}
-	runtime.SetFinalizer(finalizer, func(f *contextIDFinalizer) {
+	runtime.SetFinalizer(context, func(f *contextIDFinalizer) {
 		registry.Delete(f.contextID)
 	})
 
-	context = ctx.WithValue(context, GOFAC_CONTEXT_ID_KEY, uuidString)
-	context = ctx.WithValue(context, GOFAC_FINALIZER_KEY, finalizer)
+	// finalizer := &contextIDFinalizer{contextID: uuidString}
+	// runtime.SetFinalizer(finalizer, func(f *contextIDFinalizer) {
+	// 	registry.Delete(f.contextID)
+	// })
+
+	// context = ctx.WithValue(context, GOFAC_CONTEXT_ID_KEY, uuidString)
+	// context = ctx.WithValue(context, GOFAC_FINALIZER_KEY, finalizer)
 
 	return context
 }
 
-func GetMetadataFromContext(context ctx.Context) (map[*r.Registration]ContextRegistration, bool) {
+func GetMetadataFromContext(context ctx.Context) (map[*r.Registration]*ContextRegistration, bool) {
 	id, found := context.Value(GOFAC_CONTEXT_ID_KEY).(string)
 	if !found {
 		return nil, false
@@ -64,13 +79,5 @@ func GetMetadataFromContext(context ctx.Context) (map[*r.Registration]ContextReg
 		return nil, false
 	}
 
-	return val.(map[*r.Registration]ContextRegistration), true
-}
-
-// Optional: Explicit Cleanup
-func CleanupContextMetadata(context ctx.Context) {
-	id, found := context.Value(GOFAC_CONTEXT_ID_KEY).(string)
-	if found {
-		registry.Delete(id)
-	}
+	return val.(map[*r.Registration]*ContextRegistration), true
 }

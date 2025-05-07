@@ -26,10 +26,6 @@ There are several methods for registering a dependency.
     )
 ```
 
-## Limitations
-
-When registering context to GoFac, please do not cocurrently register context multiple times. It will result in multiple children context one per thread.
-
 ## Appendix 1. Registration Options
 
 ### Scope

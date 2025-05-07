@@ -4,12 +4,17 @@ import (
 	ctx "context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	gf "github.com/TaBSRest/GoFac/pkg/GoFac"
-	"github.com/TaBSRest/GoFac/pkg/GoFac/Options"
+	AsOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/As"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
+
+type MockRealUUIDProvider struct{}
+
+func (MockRealUUIDProvider) New() uuid.UUID { return uuid.New() }
 
 func TestContainer_Constructor_InitializedProperly(t *testing.T) {
 	assert := assert.New(t)
@@ -28,11 +33,11 @@ func TestNewContainerBuilder_DoesNotBuildTwice(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := gf.NewContainerBuilder()
-	_, err := containerBuilder.Build()
+	_, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.True(containerBuilder.IsBuilt())
 	assert.Nil(err)
 
-	_, err = containerBuilder.Build()
+	_, err = containerBuilder.Build(MockRealUUIDProvider{})
 	assert.NotNil(err)
 }
 
@@ -46,9 +51,9 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		func(container *gf.Container) (ss.IIndependentStruct, error) {
 			return gf.Resolve[*ss.IndependentStruct](ctx.Background(), container)
 		},
-		Options.As[ss.IIndependentStruct],
+		AsOptions.As[ss.IIndependentStruct],
 	)
-	container, err := containerBuilder.Build()
+	container, err := containerBuilder.Build(MockRealUUIDProvider{})
 	assert.True(containerBuilder.IsBuilt())
 	if err != nil {
 		assert.Fail(err.Error())

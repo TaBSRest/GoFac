@@ -202,24 +202,19 @@ func resolvePerContext(
 	name string,
 	dependencies []*reflect.Value,
 ) (*reflect.Value, error) {
-	if context.Value(GOFAC_CONTEXT_ID_KEY) == nil {
+	metadata, found := GetMetadataFromContext(context)
+	if !found {
 		return nil, te.New("The context is not registered to GoFac.")
 	}
 
-	contextValue := context.Value(GOFAC_CONTEXT_ID_KEY).(map[*r.Registration]ContextRegistration)
+	contextRegistration, found := metadata[registration]
+	if !found {
+		return nil, te.New("The registration is not found in the context.")
+	}
 
-	// contextRegistration, found := contextValue[registration]
-	// if !found {
-	// 	return nil, te.New("")
-	// }
-
-	// if contextRegistration.Instance != nil {
-	// 	return contextRegistration.Instance, nil
-	// }
-
-	// if contextRegistration.Once == nil {
-	// 	return nil, te.New("")
-	// }
+	if contextRegistration.Instance != nil {
+		return contextRegistration.Instance, nil
+	}
 
 	var val *reflect.Value
 	var err error
@@ -227,11 +222,10 @@ func resolvePerContext(
 		val, err = RunConstructor(ctor, name, dependencies)
 		if err == nil {
 			contextRegistration.Instance = val
-			contextValue[registration] = contextRegistration
 		}
 	})
 
-	return val, err
+	return metadata[registration].Instance, nil
 }
 
 // Strategy Pattern
