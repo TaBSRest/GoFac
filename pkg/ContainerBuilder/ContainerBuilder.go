@@ -41,22 +41,24 @@ func (cb *ContainerBuilder) Register(
 
 	cb.register(registrar)
 
-	if registrar.Name != "" {
-		if _, found := cb.namedRegistrations[registrar.Name]; found {
+	registrationName := registrar.Options.RegistrationName
+	if registrationName != "" {
+		if _, found := cb.namedRegistrations[registrationName]; found {
 			return te.New("The name is already taken! If the registration is for a group, please use Options.Grouped!")
 		}
-		cb.namedRegistrations[registrar.Name] = registrar
+		cb.namedRegistrations[registrationName] = registrar
 	}
 
-	if registrar.Group != nil {
-		groupName := registrar.Group.Name
+	if registrar.Options.RegistrationGroup != nil {
+		groupInfo := registrar.Options.RegistrationGroup
+		groupName := groupInfo.Name
 		if cb.grouped[groupName] == nil {
 			cb.grouped[groupName] = &g.Group{
-				Registrations : make([]*r.Registration, 1),
-				GroupInfo: registrar.Group,
+				Registrations : make([]*r.Registration, 0),
+				GroupInfo: groupInfo,
 			}
 		} else {
-			if cb.grouped[groupName].GroupType != registrar.Group.GroupType {
+			if cb.grouped[groupName].GroupType != groupInfo.GroupType {
 				return te.New("The type of the group must be consistence for all group members!")
 			}
 		}

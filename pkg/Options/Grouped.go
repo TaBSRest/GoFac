@@ -7,7 +7,7 @@ import (
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 )
 
-func Grouped[T any](groupName string, option *o.RegistrationOption) func(option *o.RegistrationOption) error {
+func Grouped[T any](groupName string) func(option *o.RegistrationOption) error {
 	return func(option *o.RegistrationOption) error {
 		option.RegistrationGroup = &gi.GroupInfo{
 			Name: groupName,

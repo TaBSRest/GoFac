@@ -682,3 +682,53 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 	assert.NotNil(slice[1])
 	assert.NotSame(slice[0], slice[1], "They should be different singleton instances")
 }
+
+func TestResolveGroup_AbleToResolve(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := ContainerBuilder.New()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = containerBuilder.Register(
+				ss.NewA,
+				o.As[ss.IIndependentStruct],
+				o.Grouped[ss.IIndependentStruct]("hi!"),
+			)
+			err = containerBuilder.Register(
+				ss.NewB,
+				o.As[ss.IIndependentStruct],
+				o.Grouped[ss.IIndependentStruct]("hi!"),
+			)
+		},
+		"Should not have paniced when registering a constructor!",
+	)
+
+	errorMsg := ""
+	if err != nil {
+		errorMsg = err.Error()
+	}
+	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
+
+	container, err := containerBuilder.Build()
+	assert.Nil(err)
+
+	regs, err := container.GetGroupedRegistrations("hi!")
+	assert.Nil(err)
+	assert.Equal(len(regs), 2)
+
+	var result []ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result, err = GoFac.ResolveGroup[ss.IIndependentStruct](container, "hi!")
+		},
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result, "Resolved object should not be nil!")
+	assert.Equal(2, len(result), "Resolved slice must have 2 items!")
+	assert.Nil(err, "Should not have any error!")
+	assert.Contains(result[0].ReturnNameIndependentStruct(), "IndependentStruct", "IndependentStruct should have been resolved too!")
+	assert.Contains(result[1].ReturnNameIndependentStruct(), "IndependentStructB", "IndependentStructB should have been resolved too!")
+}
+

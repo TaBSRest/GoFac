@@ -111,7 +111,7 @@ func ResolveGroup[T any](container i.Container, groupName string) ([]T, error) {
 
 	var resolutions []T
 	for i := range len(resolution) {
-		resolution, ok := resolution[i].Interface().(reflect.Value).Interface().(T)
+		resolution, ok := resolution[i].Interface().(T)
 		if !ok {
 			return base, te.New(fmt.Sprintf("One of the dependency could not be casted as %s", tInfo.Elem().Name()))
 		}
