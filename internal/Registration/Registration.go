@@ -26,7 +26,7 @@ func NewRegistration(
 		return nil, err
 	}
 
-	var options *o.RegistrationOption = o.NewRegistrationOption()
+	var options  = o.NewRegistrationOption()
 	var errors []error
 	for _, config := range ConfigurationFunctions {
 		if err := config(options); err != nil {
