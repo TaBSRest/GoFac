@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"sync"
 
+	i "github.com/TaBSRest/GoFac/interfaces"
 	"github.com/TaBSRest/GoFac/internal/BuildOption"
-	i "github.com/TaBSRest/GoFac/internal/Interfaces"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 	ScopeOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/Scope"

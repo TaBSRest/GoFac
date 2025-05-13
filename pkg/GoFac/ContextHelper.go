@@ -9,21 +9,26 @@ import (
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 )
 
+type contextKey string
+
+const gofac_UUID_WRAPPER_KEY = contextKey("GoFacUUIDWrapper")
+
+type iGoFacUUIDWrapper interface {
+	getContextID() string
+}
+
+type gofacUUIDWrapper struct {
+	contextID string
+}
+
+func (uw *gofacUUIDWrapper) getContextID() string {
+	return uw.contextID
+}
+
 type ContextRegistration struct {
 	Instance *reflect.Value
 	Once     *sync.Once
 }
-
-type contextIDFinalizer struct {
-	contextID string
-}
-
-type contextKey string
-
-const (
-	GOFAC_CONTEXT_ID_KEY = contextKey("GoFacContextID")
-	GOFAC_FINALIZER_KEY  = contextKey("GoFacFinalizer")
-)
 
 var (
 	registry sync.Map // map[string]map[*r.Registration]ContextRegistration
@@ -36,10 +41,10 @@ func (c *Container) RegisterContext(context ctx.Context) ctx.Context {
 		defer mutex.Unlock()
 	}
 
-	id, found := context.Value(GOFAC_CONTEXT_ID_KEY).(string)
-	_, exists := registry.Load(id)
-	if found && exists {
-		return context
+	if uuidWrapper, ok := context.Value(gofac_UUID_WRAPPER_KEY).(iGoFacUUIDWrapper); ok {
+		if _, exists := registry.Load(uuidWrapper.getContextID()); exists {
+			return context
+		}
 	}
 
 	uuidString := c.BuildOption.UUIDProvider.New().String()
@@ -51,31 +56,25 @@ func (c *Container) RegisterContext(context ctx.Context) ctx.Context {
 		}
 	}
 	registry.Store(uuidString, metadata)
-	context = ctx.WithValue(context, GOFAC_CONTEXT_ID_KEY, uuidString)
 
-	runtime.SetFinalizer(context, func(f *contextIDFinalizer) {
+	uuidWrapper := &gofacUUIDWrapper{contextID: uuidString}
+	runtime.SetFinalizer(uuidWrapper, func(f *gofacUUIDWrapper) {
 		registry.Delete(f.contextID)
 	})
 
-	// finalizer := &contextIDFinalizer{contextID: uuidString}
-	// runtime.SetFinalizer(finalizer, func(f *contextIDFinalizer) {
-	// 	registry.Delete(f.contextID)
-	// })
-
-	// context = ctx.WithValue(context, GOFAC_CONTEXT_ID_KEY, uuidString)
-	// context = ctx.WithValue(context, GOFAC_FINALIZER_KEY, finalizer)
+	context = ctx.WithValue(context, gofac_UUID_WRAPPER_KEY, uuidWrapper)
 
 	return context
 }
 
 func GetMetadataFromContext(context ctx.Context) (map[*r.Registration]*ContextRegistration, bool) {
-	id, found := context.Value(GOFAC_CONTEXT_ID_KEY).(string)
-	if !found {
+	uuidWrapper, ok := context.Value(gofac_UUID_WRAPPER_KEY).(iGoFacUUIDWrapper)
+	if !ok {
 		return nil, false
 	}
 
-	val, found := registry.Load(id)
-	if !found {
+	val, ok := registry.Load(uuidWrapper.getContextID())
+	if !ok {
 		return nil, false
 	}
 

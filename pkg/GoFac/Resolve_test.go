@@ -5,17 +5,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	mi "github.com/TaBSRest/GoFac/mocks/interfaces"
 	AsOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/As"
 	ScopeOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/Scope"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
-
-type MockRealUUIDProvider struct{}
-
-func (MockRealUUIDProvider) New() uuid.UUID { return uuid.New() }
 
 func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	assert := assert.New(t)
@@ -31,7 +27,7 @@ func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
@@ -61,7 +57,7 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result *ss.IndependentStruct
@@ -96,7 +92,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
@@ -138,7 +134,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
@@ -180,7 +176,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
@@ -234,7 +230,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
@@ -283,7 +279,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result1 ss.IIndependentStruct
@@ -343,7 +339,7 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 
 	assert.Nil(err, "No Error should have happened when registering")
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
@@ -388,7 +384,7 @@ func TestResolve_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) 
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result ss.IStructRelyingOnIndependentStruct
@@ -426,7 +422,7 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result ss.IStructRelyingOnIndependentStruct
@@ -480,7 +476,7 @@ func TestResolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T) {
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result ss.IStructRelyingOnIndependentStructs
@@ -525,7 +521,7 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 	}
 	assert.Nil(err, "No Error should have happened when registering!"+errorMsg)
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result []ss.IIndependentStruct
@@ -566,7 +562,7 @@ func TestContainer_ResolveMultiple_ResolvesSingleton(t *testing.T) {
 	)
 	assert.Nil(err)
 
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	a1, err := Resolve[ss.IIndependentStruct](ctx.Background(), container)
@@ -594,7 +590,7 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 	); err != nil {
 		assert.Fail(err.Error())
 	}
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var wg sync.WaitGroup
@@ -630,7 +626,7 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
 	assert := assert.New(t)
 
-	container, err := NewContainerBuilder().Build(MockRealUUIDProvider{})
+	container, err := NewContainerBuilder().Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
@@ -652,7 +648,7 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 	_ = RegisterConstructor(cb, ss.NewA, AsOptions.As[ss.IIndependentStruct], ScopeOptions.AsSingleton)
 	_ = RegisterConstructor(cb, ss.NewB, AsOptions.As[ss.IIndependentStruct], ScopeOptions.AsSingleton)
 
-	container, err := cb.Build(MockRealUUIDProvider{})
+	container, err := cb.Build(mi.NewUUIDProvider(t))
 	assert.Nil(err)
 	slice, err := ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
 

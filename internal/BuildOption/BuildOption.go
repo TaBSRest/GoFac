@@ -1,7 +1,7 @@
 package BuildOption
 
 import (
-	i "github.com/TaBSRest/GoFac/internal/Interfaces"
+	i "github.com/TaBSRest/GoFac/interfaces"
 	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 )
 

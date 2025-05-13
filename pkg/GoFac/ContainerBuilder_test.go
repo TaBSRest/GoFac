@@ -4,17 +4,13 @@ import (
 	ctx "context"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	mi "github.com/TaBSRest/GoFac/mocks/interfaces"
 	gf "github.com/TaBSRest/GoFac/pkg/GoFac"
 	AsOptions "github.com/TaBSRest/GoFac/pkg/GoFac/Options/As"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
-
-type MockRealUUIDProvider struct{}
-
-func (MockRealUUIDProvider) New() uuid.UUID { return uuid.New() }
 
 func TestContainer_Constructor_InitializedProperly(t *testing.T) {
 	assert := assert.New(t)
@@ -33,11 +29,11 @@ func TestNewContainerBuilder_DoesNotBuildTwice(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := gf.NewContainerBuilder()
-	_, err := containerBuilder.Build(MockRealUUIDProvider{})
+	_, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.True(containerBuilder.IsBuilt())
 	assert.Nil(err)
 
-	_, err = containerBuilder.Build(MockRealUUIDProvider{})
+	_, err = containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.NotNil(err)
 }
 
@@ -53,7 +49,7 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		},
 		AsOptions.As[ss.IIndependentStruct],
 	)
-	container, err := containerBuilder.Build(MockRealUUIDProvider{})
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.True(containerBuilder.IsBuilt())
 	if err != nil {
 		assert.Fail(err.Error())
@@ -71,3 +67,5 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		assert.Fail(err.Error())
 	}
 }
+
+// Add Tests for BuildOption
