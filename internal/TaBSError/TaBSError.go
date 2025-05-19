@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"strings"
 	"slices"
+	"strings"
 )
 
 type TaBSError struct {
-	location   string
-	message    string
+	location string
+	message  string
 	children []error
 }
 
@@ -119,4 +119,3 @@ func (e *TaBSError) Unwrap() error {
 	}
 	return New("The error contains multilpe errors. It cannot unwrap to one error.")
 }
-

@@ -1,8 +1,8 @@
 package Group
 
 import (
-	gi "github.com/TaBSRest/GoFac/internal/RegistrationOption/GroupInfo"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
+	gi "github.com/TaBSRest/GoFac/internal/RegistrationOption/GroupInfo"
 )
 
 type Group struct {

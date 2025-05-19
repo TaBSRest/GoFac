@@ -1,4 +1,4 @@
-package Options
+package Registration
 
 import (
 	"testing"
@@ -25,36 +25,20 @@ func TestSetToPerCall_PerformsCorrectly(t *testing.T) {
 	assert.Equal(s.PerCall, option.Scope, "Scope must be set to PerCall!")
 }
 
-func TestSetToPerRequest_PerformsCorrectly(t *testing.T) {
+func TestSetToPerContext_PerformsCorrectly(t *testing.T) {
 	assert := assert.New(t)
 
 	option := o.NewRegistrationOption()
 
 	var err error
 	assert.NotPanics(
-		func() { err = PerRequest(option) },
+		func() { err = PerContext(option) },
 		"Should not have paniced when setting the scope option!",
 	)
 
 	assert.Nil(err, "Should not have returned error!")
 
-	assert.Equal(s.PerRequest, option.Scope, "Scope must be set to PerRequest!")
-}
-
-func TestSetToPerScope_PerformsCorrectly(t *testing.T) {
-	assert := assert.New(t)
-
-	option := o.NewRegistrationOption()
-
-	var err error
-	assert.NotPanics(
-		func() { err = PerScope(option) },
-		"Should not have paniced when setting the scope option!",
-	)
-
-	assert.Nil(err, "Should not have returned error!")
-
-	assert.Equal(s.PerScope, option.Scope, "Scope must be set to PerScope!")
+	assert.Equal(s.PerContext, option.Scope, "Scope must be set to PerContext!")
 }
 
 func TestSetToAsSingleton_PerformsCorrectly(t *testing.T) {
@@ -72,4 +56,3 @@ func TestSetToAsSingleton_PerformsCorrectly(t *testing.T) {
 
 	assert.Equal(s.Singleton, option.Scope, "Scope must be set to Singleton!")
 }
-

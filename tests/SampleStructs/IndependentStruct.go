@@ -2,7 +2,7 @@ package SampleStructs
 
 import "errors"
 
-type IndependentStruct struct {}
+type IndependentStruct struct{}
 
 func NewIndependentStruct() *IndependentStruct {
 	return &IndependentStruct{}

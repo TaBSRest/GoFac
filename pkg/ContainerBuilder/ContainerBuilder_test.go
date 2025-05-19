@@ -1,85 +1,224 @@
 package ContainerBuilder_test
 
 import (
+	ctx "context"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	i "github.com/TaBSRest/GoFac/interfaces"
-	cb "github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
 	"github.com/TaBSRest/GoFac"
-	"github.com/TaBSRest/GoFac/pkg/Options"
+	i "github.com/TaBSRest/GoFac/interfaces"
+	mi "github.com/TaBSRest/GoFac/mocks/interfaces"
+	cb "github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
+	RegistrationOptions "github.com/TaBSRest/GoFac/pkg/Options/Registration"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
 
-func TestContainer_Constructor_InitializedProperly(t *testing.T) {
+func TestNew_DoesNotPanicAndReturnsContainerBuilder(t *testing.T) {
 	assert := assert.New(t)
 
-	var gofac *cb.ContainerBuilder
-	assert.NotPanics(
-		func() {
-			gofac = cb.New()
-		},
-		"Should not panic when creating new container",
+	var containerBuilder *cb.ContainerBuilder
+	assert.NotPanics(func() {
+		containerBuilder = cb.New()
+	}, "Should not panic when constructing a ContainerBuilder",
 	)
-	assert.NotNil(gofac, "Initialized container should not be nil")
+	assert.NotNil(containerBuilder, "Should return a non-nil ContainerBuilder")
 }
 
-func TestNewContainerBuilder_DoesNotBuildTwice(t *testing.T) {
+func TestNew_ReturnsError_WhenBuildingTwice(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	_, err := containerBuilder.Build()
+	_, err := containerBuilder.Build(mi.NewUUIDProvider(t))
 	assert.True(containerBuilder.IsBuilt())
 	assert.Nil(err)
 
-	_, err = containerBuilder.Build()
-	assert.NotNil(err)
+	_, err = containerBuilder.Build(mi.NewUUIDProvider(t))
+	assert.NotNil(err, "Should return error when building twice")
 }
 
-func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
+func TestRegisterConstructor_DoesNotPanic(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	containerBuilder.Register(ss.NewIndependentStruct)
-	containerBuilder.Register(
-		func(container i.Container) (ss.IIndependentStruct, error) {
-			return GoFac.Resolve[*ss.IndependentStruct](container)
-		},
-		Options.As[ss.IIndependentStruct],
+	var err error
+	assert.NotPanics(func() {
+		err = containerBuilder.RegisterConstructor(ss.NewA, RegistrationOptions.As[ss.IIndependentStruct])
+	}, "Should not panic when registering a constructor",
 	)
-	container, err := containerBuilder.Build()
-	assert.True(containerBuilder.IsBuilt())
-	if err != nil {
-		assert.Fail(err.Error())
-	}
+	assert.Nil(err)
+}
 
-	sample1, err := GoFac.Resolve[*ss.IndependentStruct](container)
-	assert.NotNil(sample1)
-	if err != nil {
-		assert.Fail(err.Error())
-	}
+func TestRegisterConstructor_ReturnsError_IfNameIsDuplicated(t *testing.T) {
+	assert := assert.New(t)
 
-	sample2, err := GoFac.Resolve[ss.IIndependentStruct](container)
-	assert.NotNil(sample2)
-	if err != nil {
-		assert.Fail(err.Error())
+	containerBuilder := cb.New()
+	err1 := containerBuilder.RegisterConstructor(
+		ss.NewA,
+		RegistrationOptions.As[ss.IIndependentStruct],
+		RegistrationOptions.Named("MyStruct"),
+	)
+	assert.Nil(err1)
+
+	err2 := containerBuilder.RegisterConstructor(
+		ss.NewA,
+		RegistrationOptions.As[ss.IIndependentStruct],
+		RegistrationOptions.Named("MyStruct"),
+	)
+	assert.NotNil(err2, "Expected error due to duplicate name, but got nil")
+	if err2 != nil {
+		assert.Contains(err2.Error(), "The name is already taken! If the registration is for a group, please use Options.Grouped!")
 	}
+}
+
+func TestRegisterConstructor_AddsToGroupSuccessfully(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	err := containerBuilder.RegisterConstructor(
+		ss.NewA,
+		RegistrationOptions.As[ss.IIndependentStruct],
+		RegistrationOptions.Grouped[ss.IIndependentStruct]("GroupA"),
+	)
+	assert.Nil(err)
+
+	grouped, err := containerBuilder.GetGroupedRegistrations("GroupA")
+	assert.Nil(err)
+	assert.Len(grouped, 1)
+}
+
+func TestRegisterConstructor_ReturnsError_IfGroupTypeIsNotConsistent(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	err := containerBuilder.RegisterConstructor(
+		ss.NewA,
+		RegistrationOptions.As[ss.IIndependentStruct],
+		RegistrationOptions.Grouped[ss.IIndependentStruct]("GroupA"),
+	)
+	assert.Nil(err)
+
+	err = containerBuilder.RegisterConstructor(
+		ss.NewB,
+		RegistrationOptions.As[ss.IIndependentStruct2],
+		RegistrationOptions.Grouped[ss.IIndependentStruct2]("GroupA"),
+	)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "The type of the group must be consistent for all group members!")
+}
+
+func TestRegisterConstructor_AddsRegistrationToPerContextRegistrations_WhenScopeIsPerContext(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	err := containerBuilder.RegisterConstructor(
+		ss.NewA,
+		RegistrationOptions.As[ss.IIndependentStruct],
+		RegistrationOptions.PerContext,
+	)
+	assert.Nil(err)
+
+	perContextRegistrations := containerBuilder.GetPerContextRegistrations()
+	assert.Len(perContextRegistrations, 1,
+		"One registration should be in perContextRegistrations",
+	)
 }
 
 func TestGetRegistrations_ReturnedValuesAreImmutable(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	containerBuilder.Register(ss.NewIndependentStruct, Options.As[ss.IIndependentStruct])
-	containerBuilder.Register(ss.NewA)
+	containerBuilder.RegisterConstructor(ss.NewIndependentStruct, RegistrationOptions.As[ss.IIndependentStruct])
+	containerBuilder.RegisterConstructor(ss.NewA)
 	regs, found := cb.GetRegistrations[ss.IIndependentStruct](containerBuilder)
 	assert.True(found)
 	assert.Equal(2, len(regs))
-	regs = regs[:1]
 
 	newCopy, found := cb.GetRegistrations[ss.IIndependentStruct](containerBuilder)
 	assert.True(found)
 	assert.Equal(2, len(newCopy))
 }
 
+func TestGetRegistrationsFor_ReturnsExpectedRegistrations(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	err := containerBuilder.RegisterConstructor(
+		ss.NewA,
+		RegistrationOptions.As[ss.IIndependentStruct],
+	)
+	assert.Nil(err)
+
+	typ := reflect.TypeFor[ss.IIndependentStruct]()
+	registrations, found := containerBuilder.GetRegistrationsFor(typ)
+	assert.True(found)
+	assert.Len(registrations, 1)
+}
+
+func TestBuild_ReturnsContainer(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+
+	assert.Nil(err)
+	assert.NotNil(container)
+	assert.True(containerBuilder.IsBuilt())
+
+	self, err := GoFac.Resolve[i.Container](ctx.Background(), container)
+	assert.Nil(err)
+	assert.Equal(container, self)
+}
+
+func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	containerBuilder.RegisterConstructor(ss.NewIndependentStruct)
+	containerBuilder.RegisterConstructor(
+		func(container i.Container) (ss.IIndependentStruct, error) {
+			return GoFac.Resolve[*ss.IndependentStruct](ctx.Background(), container)
+		},
+		RegistrationOptions.As[ss.IIndependentStruct],
+	)
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+	assert.True(containerBuilder.IsBuilt())
+	if err != nil {
+		assert.Fail(err.Error())
+	}
+
+	sample1, err := GoFac.Resolve[*ss.IndependentStruct](ctx.Background(), container)
+	assert.NotNil(sample1)
+	if err != nil {
+		assert.Fail(err.Error())
+	}
+
+	sample2, err := GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+	assert.NotNil(sample2)
+	if err != nil {
+		assert.Fail(err.Error())
+	}
+}
+
+func TestBuild_ReturnsError_WhenUUIDProviderIsNil(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	container, err := containerBuilder.Build(nil)
+
+	assert.Nil(container)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "uuidProvider is nil")
+}
+
+func TestBuild_SetsBuildOptionInContainer(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+
+	assert.Nil(err)
+	assert.NotNil(container)
+	assert.NotNil(container.BuildOption)
+}

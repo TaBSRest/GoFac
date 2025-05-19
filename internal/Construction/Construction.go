@@ -7,7 +7,7 @@ import (
 )
 
 type Construction struct {
-	Info reflect.Type
+	Info  reflect.Type
 	Value reflect.Value
 }
 
@@ -21,7 +21,7 @@ func NewConstruction(info reflect.Type, value reflect.Value) (Construction, erro
 	}
 
 	return Construction{
-		Info: info,
+		Info:  info,
 		Value: value,
 	}, nil
 }
