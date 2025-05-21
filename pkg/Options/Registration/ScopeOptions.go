@@ -1,4 +1,4 @@
-package Options
+package Registration
 
 import (
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
@@ -10,13 +10,8 @@ func PerCall(option *o.RegistrationOption) error {
 	return nil
 }
 
-func PerRequest(option *o.RegistrationOption) error {
-	option.Scope = s.PerRequest
-	return nil
-}
-
-func PerScope(option *o.RegistrationOption) error {
-	option.Scope = s.PerScope
+func PerContext(option *o.RegistrationOption) error {
+	option.Scope = s.PerContext
 	return nil
 }
 

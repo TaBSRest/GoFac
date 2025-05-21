@@ -2,7 +2,7 @@ package Helpers
 
 import "reflect"
 
-func DereferencePointedArr(pointedArr []*reflect.Value) ([]reflect.Value) {
+func DereferencePointedArr(pointedArr []*reflect.Value) []reflect.Value {
 	arr := make([]reflect.Value, len(pointedArr))
 	for i, val := range pointedArr {
 		arr[i] = *val
@@ -22,14 +22,14 @@ func CastInput(uncastedInputs []reflect.Value, target []reflect.Type) ([]reflect
 			castedInput := reflect.MakeSlice(reflect.SliceOf(elementaryType), 0, 10)
 			for _, input := range uncastedInput.Interface().([]reflect.Value) {
 				if !input.CanConvert(elementaryType) {
-					return nil, MakeError("GoFac.Resolve", "Cannot convert " + input.Type().Name() + " to " + elementaryType.Name())
+					return nil, MakeError("GoFac.Resolve", "Cannot convert "+input.Type().Name()+" to "+elementaryType.Name())
 				}
 				castedInput = reflect.Append(castedInput, input.Convert(elementaryType))
 				castedInputs[i] = castedInput
 			}
 		} else {
 			if !uncastedInput.CanConvert(target[i]) {
-				return nil, MakeError("GoFac.Resolve", "Cannot convert " + uncastedInput.Type().Name() + " to " + target[i].Name())
+				return nil, MakeError("GoFac.Resolve", "Cannot convert "+uncastedInput.Type().Name()+" to "+target[i].Name())
 			}
 			castedInputs[i] = uncastedInput.Convert(target[i])
 		}
