@@ -35,7 +35,7 @@ func New() *ContainerBuilder {
 	}
 }
 
-func (cb *ContainerBuilder) RegisterConstructor(
+func (cb *ContainerBuilder) Register(
 	constructor any,
 	configFunctions ...func(*o.RegistrationOption) error,
 ) error {
@@ -139,7 +139,7 @@ func (cb *ContainerBuilder) Build(
 		SingletonCache:   new(sync.Map),
 	}
 
-	err = cb.RegisterConstructor(
+	err = cb.Register(
 		func() i.Container { return container },
 		RegistrationOptions.AsSingleton,
 	)

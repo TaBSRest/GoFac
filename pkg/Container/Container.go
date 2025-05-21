@@ -45,7 +45,7 @@ type ContextRegistration struct {
 }
 
 var (
-	registry sync.Map // map[string]map[*r.Registration]ContextRegistration
+	registry sync.Map // map[string]map[*r.Registration]*ContextRegistration
 	mutex    sync.Mutex
 )
 

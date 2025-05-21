@@ -24,7 +24,7 @@ func TestRegisterContext_ReturnsNewAndDifferentContext(t *testing.T) {
 	mockUUIDProvider.EXPECT().New().Return(mockUUID)
 
 	containerBuilder := ContainerBuilder.New()
-	containerBuilder.RegisterConstructor(ss.NewA, RegistrationOptions.As[ss.IIndependentStruct])
+	containerBuilder.Register(ss.NewA, RegistrationOptions.As[ss.IIndependentStruct])
 	container, _ := containerBuilder.Build(mockUUIDProvider)
 
 	context := ctx.Background()
@@ -40,7 +40,7 @@ func TestRegisterContext_ReturnsSameContext_IfContextHasAlreadyBeenRegistered(t 
 	mockUUIDProvider.EXPECT().New().Return(mockUUID)
 
 	containerBuilder := ContainerBuilder.New()
-	containerBuilder.RegisterConstructor(
+	containerBuilder.Register(
 		ss.NewA,
 		func(option *RegistrationOption.RegistrationOption) error {
 			option.Scope = Scope.PerContext
@@ -64,7 +64,7 @@ func TestGetMetadataFromContext_ReturnsCorrectMetadataAndTrue(t *testing.T) {
 	mockUUIDProvider.EXPECT().New().Return(mockUUID)
 
 	containerBuilder := ContainerBuilder.New()
-	containerBuilder.RegisterConstructor(
+	containerBuilder.Register(
 		ss.NewA,
 		func(option *RegistrationOption.RegistrationOption) error {
 			option.Scope = Scope.PerContext

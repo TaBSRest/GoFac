@@ -227,24 +227,6 @@ func resolveInstance(
 	}
 }
 
-func runConstructor(construction c.Construction, name string, dependencies []*reflect.Value) (*reflect.Value, error) {
-	types := make([]reflect.Type, construction.Info.NumIn())
-	for i := range construction.Info.NumIn() {
-		types[i] = construction.Info.In(i)
-	}
-	castedDependencies, err := h.CastInput(h.DereferencePointedArr(dependencies), types)
-	if err != nil {
-		return nil, err
-	}
-
-	value := construction.Value.Call(castedDependencies)
-	if construction.Info.NumOut() == 2 && !value[1].IsNil() {
-		return nil, te.New(fmt.Sprintf("Constructor of %s threw an error", name)).Join(value[1].Interface().(error))
-	}
-
-	return &value[0], nil
-}
-
 func resolveSingleton(container i.Container, registration *r.Registration) (*reflect.Value, error) {
 	creationResult, found := container.GetSingletonCache().Load(registration)
 	if found {
@@ -288,4 +270,22 @@ func resolvePerContext(
 	})
 
 	return metadata[registration].Instance, nil
+}
+
+func runConstructor(construction c.Construction, name string, dependencies []*reflect.Value) (*reflect.Value, error) {
+	types := make([]reflect.Type, construction.Info.NumIn())
+	for i := range construction.Info.NumIn() {
+		types[i] = construction.Info.In(i)
+	}
+	castedDependencies, err := h.CastInput(h.DereferencePointedArr(dependencies), types)
+	if err != nil {
+		return nil, err
+	}
+
+	value := construction.Value.Call(castedDependencies)
+	if construction.Info.NumOut() == 2 && !value[1].IsNil() {
+		return nil, te.New(fmt.Sprintf("Constructor of %s threw an error", name)).Join(value[1].Interface().(error))
+	}
+
+	return &value[0], nil
 }

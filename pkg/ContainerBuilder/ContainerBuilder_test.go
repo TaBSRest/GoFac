@@ -44,7 +44,7 @@ func TestRegisterConstructor_DoesNotPanic(t *testing.T) {
 	containerBuilder := cb.New()
 	var err error
 	assert.NotPanics(func() {
-		err = containerBuilder.RegisterConstructor(ss.NewA, RegistrationOptions.As[ss.IIndependentStruct])
+		err = containerBuilder.Register(ss.NewA, RegistrationOptions.As[ss.IIndependentStruct])
 	}, "Should not panic when registering a constructor",
 	)
 	assert.Nil(err)
@@ -54,14 +54,14 @@ func TestRegisterConstructor_ReturnsError_IfNameIsDuplicated(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	err1 := containerBuilder.RegisterConstructor(
+	err1 := containerBuilder.Register(
 		ss.NewA,
 		RegistrationOptions.As[ss.IIndependentStruct],
 		RegistrationOptions.Named("MyStruct"),
 	)
 	assert.Nil(err1)
 
-	err2 := containerBuilder.RegisterConstructor(
+	err2 := containerBuilder.Register(
 		ss.NewA,
 		RegistrationOptions.As[ss.IIndependentStruct],
 		RegistrationOptions.Named("MyStruct"),
@@ -76,7 +76,7 @@ func TestRegisterConstructor_AddsToGroupSuccessfully(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	err := containerBuilder.RegisterConstructor(
+	err := containerBuilder.Register(
 		ss.NewA,
 		RegistrationOptions.As[ss.IIndependentStruct],
 		RegistrationOptions.Grouped[ss.IIndependentStruct]("GroupA"),
@@ -92,14 +92,14 @@ func TestRegisterConstructor_ReturnsError_IfGroupTypeIsNotConsistent(t *testing.
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	err := containerBuilder.RegisterConstructor(
+	err := containerBuilder.Register(
 		ss.NewA,
 		RegistrationOptions.As[ss.IIndependentStruct],
 		RegistrationOptions.Grouped[ss.IIndependentStruct]("GroupA"),
 	)
 	assert.Nil(err)
 
-	err = containerBuilder.RegisterConstructor(
+	err = containerBuilder.Register(
 		ss.NewB,
 		RegistrationOptions.As[ss.IIndependentStruct2],
 		RegistrationOptions.Grouped[ss.IIndependentStruct2]("GroupA"),
@@ -112,7 +112,7 @@ func TestRegisterConstructor_AddsRegistrationToPerContextRegistrations_WhenScope
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	err := containerBuilder.RegisterConstructor(
+	err := containerBuilder.Register(
 		ss.NewA,
 		RegistrationOptions.As[ss.IIndependentStruct],
 		RegistrationOptions.PerContext,
@@ -129,8 +129,8 @@ func TestGetRegistrations_ReturnedValuesAreImmutable(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	containerBuilder.RegisterConstructor(ss.NewIndependentStruct, RegistrationOptions.As[ss.IIndependentStruct])
-	containerBuilder.RegisterConstructor(ss.NewA)
+	containerBuilder.Register(ss.NewIndependentStruct, RegistrationOptions.As[ss.IIndependentStruct])
+	containerBuilder.Register(ss.NewA)
 	regs, found := cb.GetRegistrations[ss.IIndependentStruct](containerBuilder)
 	assert.True(found)
 	assert.Equal(2, len(regs))
@@ -144,7 +144,7 @@ func TestGetRegistrationsFor_ReturnsExpectedRegistrations(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	err := containerBuilder.RegisterConstructor(
+	err := containerBuilder.Register(
 		ss.NewA,
 		RegistrationOptions.As[ss.IIndependentStruct],
 	)
@@ -175,8 +175,8 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	containerBuilder.RegisterConstructor(ss.NewIndependentStruct)
-	containerBuilder.RegisterConstructor(
+	containerBuilder.Register(ss.NewIndependentStruct)
+	containerBuilder.Register(
 		func(container i.Container) (ss.IIndependentStruct, error) {
 			return GoFac.Resolve[*ss.IndependentStruct](ctx.Background(), container)
 		},
