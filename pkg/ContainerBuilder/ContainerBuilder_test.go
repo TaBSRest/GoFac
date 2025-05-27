@@ -9,7 +9,6 @@ import (
 
 	"github.com/TaBSRest/GoFac"
 	i "github.com/TaBSRest/GoFac/interfaces"
-	mi "github.com/TaBSRest/GoFac/mocks/interfaces"
 	cb "github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
 	RegistrationOptions "github.com/TaBSRest/GoFac/pkg/Options/Registration"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
@@ -30,11 +29,11 @@ func TestNew_ReturnsError_WhenBuildingTwice(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	_, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+	_, err := containerBuilder.Build()
 	assert.True(containerBuilder.IsBuilt())
 	assert.Nil(err)
 
-	_, err = containerBuilder.Build(mi.NewUUIDProvider(t))
+	_, err = containerBuilder.Build()
 	assert.NotNil(err, "Should return error when building twice")
 }
 
@@ -135,6 +134,8 @@ func TestGetRegistrations_ReturnedValuesAreImmutable(t *testing.T) {
 	assert.True(found)
 	assert.Equal(2, len(regs))
 
+	regs = regs[:1]
+
 	newCopy, found := cb.GetRegistrations[ss.IIndependentStruct](containerBuilder)
 	assert.True(found)
 	assert.Equal(2, len(newCopy))
@@ -160,7 +161,7 @@ func TestBuild_ReturnsContainer(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+	container, err := containerBuilder.Build()
 
 	assert.Nil(err)
 	assert.NotNil(container)
@@ -182,7 +183,7 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		},
 		RegistrationOptions.As[ss.IIndependentStruct],
 	)
-	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+	container, err := containerBuilder.Build()
 	assert.True(containerBuilder.IsBuilt())
 	if err != nil {
 		assert.Fail(err.Error())
@@ -201,22 +202,11 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 	}
 }
 
-func TestBuild_ReturnsError_WhenUUIDProviderIsNil(t *testing.T) {
-	assert := assert.New(t)
-
-	containerBuilder := cb.New()
-	container, err := containerBuilder.Build(nil)
-
-	assert.Nil(container)
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "uuidProvider is nil")
-}
-
 func TestBuild_SetsBuildOptionInContainer(t *testing.T) {
 	assert := assert.New(t)
 
 	containerBuilder := cb.New()
-	container, err := containerBuilder.Build(mi.NewUUIDProvider(t))
+	container, err := containerBuilder.Build()
 
 	assert.Nil(err)
 	assert.NotNil(container)

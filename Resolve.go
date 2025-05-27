@@ -236,7 +236,7 @@ func resolveSingleton(container i.Container, registration *r.Registration) (*ref
 		}
 		return val.value, val.err
 	}
-	return nil, nil
+	return nil, te.New("SingletonCache not found!")
 }
 
 func resolvePerContext(

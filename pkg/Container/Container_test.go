@@ -4,12 +4,10 @@ import (
 	ctx "context"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/TaBSRest/GoFac/internal/RegistrationOption"
 	"github.com/TaBSRest/GoFac/internal/Scope"
-	mi "github.com/TaBSRest/GoFac/mocks/interfaces"
 	"github.com/TaBSRest/GoFac/pkg/Container"
 	"github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
 	RegistrationOptions "github.com/TaBSRest/GoFac/pkg/Options/Registration"
@@ -19,13 +17,9 @@ import (
 func TestRegisterContext_ReturnsNewAndDifferentContext(t *testing.T) {
 	assert := assert.New(t)
 
-	mockUUID := uuid.New()
-	mockUUIDProvider := mi.NewUUIDProvider(t)
-	mockUUIDProvider.EXPECT().New().Return(mockUUID)
-
 	containerBuilder := ContainerBuilder.New()
 	containerBuilder.Register(ss.NewA, RegistrationOptions.As[ss.IIndependentStruct])
-	container, _ := containerBuilder.Build(mockUUIDProvider)
+	container, _ := containerBuilder.Build()
 
 	context := ctx.Background()
 	newContext := container.RegisterContext(context)
@@ -35,10 +29,6 @@ func TestRegisterContext_ReturnsNewAndDifferentContext(t *testing.T) {
 func TestRegisterContext_ReturnsSameContext_IfContextHasAlreadyBeenRegistered(t *testing.T) {
 	assert := assert.New(t)
 
-	mockUUID := uuid.New()
-	mockUUIDProvider := mi.NewUUIDProvider(t)
-	mockUUIDProvider.EXPECT().New().Return(mockUUID)
-
 	containerBuilder := ContainerBuilder.New()
 	containerBuilder.Register(
 		ss.NewA,
@@ -47,7 +37,7 @@ func TestRegisterContext_ReturnsSameContext_IfContextHasAlreadyBeenRegistered(t 
 			return RegistrationOptions.As[ss.IIndependentStruct](option)
 		},
 	)
-	container, _ := containerBuilder.Build(mockUUIDProvider)
+	container, _ := containerBuilder.Build()
 
 	context := ctx.Background()
 	firstNewContext := container.RegisterContext(context)
@@ -59,10 +49,6 @@ func TestRegisterContext_ReturnsSameContext_IfContextHasAlreadyBeenRegistered(t 
 func TestGetMetadataFromContext_ReturnsCorrectMetadataAndTrue(t *testing.T) {
 	assert := assert.New(t)
 
-	mockUUID := uuid.New()
-	mockUUIDProvider := mi.NewUUIDProvider(t)
-	mockUUIDProvider.EXPECT().New().Return(mockUUID)
-
 	containerBuilder := ContainerBuilder.New()
 	containerBuilder.Register(
 		ss.NewA,
@@ -72,7 +58,7 @@ func TestGetMetadataFromContext_ReturnsCorrectMetadataAndTrue(t *testing.T) {
 		},
 	)
 
-	container, _ := containerBuilder.Build(mockUUIDProvider)
+	container, _ := containerBuilder.Build()
 
 	context := ctx.Background()
 	newContext := container.RegisterContext(context)

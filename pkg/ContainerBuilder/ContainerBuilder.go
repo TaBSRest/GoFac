@@ -118,17 +118,13 @@ func (cb *ContainerBuilder) GetRegistrationsFor(registrationType reflect.Type) (
 }
 
 func (cb *ContainerBuilder) Build(
-	uuidProvider i.UUIDProvider,
 	configFunctions ...func(*BuildOption.BuildOption),
 ) (*Container.Container, error) {
 	if cb.built {
 		return nil, te.New("This ContainerBuilder is already built!")
 	}
 
-	buildOption, err := BuildOption.New(uuidProvider)
-	if err != nil {
-		return nil, err
-	}
+	buildOption := BuildOption.New()
 	for _, optionFunction := range configFunctions {
 		optionFunction(buildOption)
 	}
@@ -139,7 +135,7 @@ func (cb *ContainerBuilder) Build(
 		SingletonCache:   new(sync.Map),
 	}
 
-	err = cb.Register(
+	err := cb.Register(
 		func() i.Container { return container },
 		RegistrationOptions.AsSingleton,
 	)

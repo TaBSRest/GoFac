@@ -6,10 +6,16 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/google/uuid"
+
 	i "github.com/TaBSRest/GoFac/interfaces"
 	"github.com/TaBSRest/GoFac/internal/BuildOption"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 )
+
+type contextKey string
+
+const gofac_UUID_WRAPPER_KEY = contextKey("GoFacUUIDWrapper")
 
 type Container struct {
 	i.ContainerBuilder
@@ -21,13 +27,11 @@ func (c *Container) GetSingletonCache() *sync.Map {
 	return c.SingletonCache
 }
 
-type contextKey string
-
-const gofac_UUID_WRAPPER_KEY = contextKey("GoFacUUIDWrapper")
-
 type iGoFacUUIDWrapper interface {
 	getContextID() string
 }
+
+var _ iGoFacUUIDWrapper = (*goFacUUIDWrapper)(nil)
 
 type goFacUUIDWrapper struct {
 	contextID string
@@ -37,15 +41,13 @@ func (uw *goFacUUIDWrapper) getContextID() string {
 	return uw.contextID
 }
 
-var _ iGoFacUUIDWrapper = (*goFacUUIDWrapper)(nil)
-
 type ContextRegistration struct {
 	Instance *reflect.Value
 	Once     *sync.Once
 }
 
 var (
-	registry sync.Map // map[string]map[*r.Registration]*ContextRegistration
+	registry sync.Map // Data Type: map[string]map[*r.Registration]*ContextRegistration
 	mutex    sync.Mutex
 )
 
@@ -61,7 +63,7 @@ func (c *Container) RegisterContext(context ctx.Context) ctx.Context {
 		}
 	}
 
-	uuidString := c.BuildOption.UUIDProvider.New().String()
+	uuidString := uuid.New().String()
 	metadata := make(map[*r.Registration]*ContextRegistration)
 	perContextRegistrations := c.GetPerContextRegistrations()
 	for _, registration := range perContextRegistrations {
