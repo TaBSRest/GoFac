@@ -19,7 +19,7 @@ type singletonCreationResult struct {
 	err   error
 }
 
-func Resolve[T any](context ctx.Context, container i.Container) (T, error) {
+func Resolve[T any](container i.Container, context ctx.Context) (T, error) {
 	var base T
 
 	tInfo := reflect.TypeFor[T]()
@@ -27,7 +27,7 @@ func Resolve[T any](context ctx.Context, container i.Container) (T, error) {
 		return base, te.New("Use ResolveMultiple for resolving an array or a slice")
 	}
 
-	dependency, err := resolve(context, container, tInfo)
+	dependency, err := resolve(container, context, tInfo)
 	if err != nil {
 		return base, te.New(fmt.Sprintf("Error resolving %s!", tInfo.String())).Join(err)
 	}
@@ -39,7 +39,7 @@ func Resolve[T any](context ctx.Context, container i.Container) (T, error) {
 	return dependencyT, nil
 }
 
-func ResolveNamed[T any](context ctx.Context, container i.Container, name string) (T, error) {
+func ResolveNamed[T any](container i.Container, context ctx.Context, name string) (T, error) {
 	var base T
 
 	tInfo := reflect.TypeFor[T]()
@@ -52,7 +52,7 @@ func ResolveNamed[T any](context ctx.Context, container i.Container, name string
 		return base, te.New(fmt.Sprintf("Error resolving registration with name %s", name)).Join(err)
 	}
 
-	instance, err := resolveOne(context, container, tInfo, registration)
+	instance, err := resolveOne(container, context, tInfo, registration)
 	if err != nil {
 		return base, te.New(fmt.Sprintf("Error resolving %s!", tInfo.String())).Join(err)
 	}
@@ -65,7 +65,7 @@ func ResolveNamed[T any](context ctx.Context, container i.Container, name string
 	return instanceT, nil
 }
 
-func ResolveMultiple[T any](context ctx.Context, container i.Container) ([]T, error) {
+func ResolveMultiple[T any](container i.Container, context ctx.Context) ([]T, error) {
 	var base []T
 
 	if h.IsArrayOrSlice(reflect.TypeFor[T]()) {
@@ -73,7 +73,7 @@ func ResolveMultiple[T any](context ctx.Context, container i.Container) ([]T, er
 	}
 
 	tInfo := reflect.TypeFor[[]T]()
-	resolution, err := resolve(context, container, tInfo)
+	resolution, err := resolve(container, context, tInfo)
 	if err != nil {
 		return base, te.New(fmt.Sprintf("Error resolving %s!", tInfo.String())).Join(err)
 	}
@@ -93,7 +93,7 @@ func ResolveMultiple[T any](context ctx.Context, container i.Container) ([]T, er
 	return resolutions, nil
 }
 
-func ResolveGroup[T any](context ctx.Context, container i.Container, groupName string) ([]T, error) {
+func ResolveGroup[T any](container i.Container, context ctx.Context, groupName string) ([]T, error) {
 	var base []T
 
 	if h.IsArrayOrSlice(reflect.TypeFor[T]()) {
@@ -106,7 +106,7 @@ func ResolveGroup[T any](context ctx.Context, container i.Container, groupName s
 		return nil, te.New(fmt.Sprintf("%s not registered!", tInfo.Elem().String()))
 	}
 
-	resolution, err := resolveMultiple(context, container, tInfo, registrations)
+	resolution, err := resolveMultiple(container, context, tInfo, registrations)
 	if err != nil {
 		return base, te.New(fmt.Sprintf("Error resolving %s!", tInfo.String())).Join(err)
 	}
@@ -122,13 +122,13 @@ func ResolveGroup[T any](context ctx.Context, container i.Container, groupName s
 	return resolutions, nil
 }
 
-func resolve(context ctx.Context, container i.Container, tInfo reflect.Type) (*reflect.Value, error) {
+func resolve(container i.Container, context ctx.Context, tInfo reflect.Type) (*reflect.Value, error) {
 	if h.IsArrayOrSlice(tInfo) {
 		registrations, found := container.GetRegistrationsFor(tInfo.Elem())
 		if !found {
 			return nil, te.New(fmt.Sprintf("%s is not registered!", tInfo.String()))
 		}
-		tmpResolution, err := resolveMultiple(context, container, tInfo.Elem(), registrations)
+		tmpResolution, err := resolveMultiple(container, context, tInfo.Elem(), registrations)
 		if err != nil {
 			return nil, err
 		}
@@ -141,32 +141,32 @@ func resolve(context ctx.Context, container i.Container, tInfo reflect.Type) (*r
 			return nil, te.New(fmt.Sprintf("%s is not registered!", tInfo.String()))
 		}
 		registration := registrations[len(registrations)-1]
-		return resolveOne(context, container, tInfo, registration)
+		return resolveOne(container, context, tInfo, registration)
 	}
 }
 
-func resolveOne(context ctx.Context, container i.Container, tInfo reflect.Type, registration *r.Registration) (*reflect.Value, error) {
+func resolveOne(container i.Container, context ctx.Context, tInfo reflect.Type, registration *r.Registration) (*reflect.Value, error) {
 	constructor := registration.Construction
-	dependencies, err := getDependencies(context, container, tInfo.String(), constructor)
+	dependencies, err := getDependencies(container, context, tInfo.String(), constructor)
 	if err != nil {
 		return nil, err
 	}
 
-	instance, err := resolveInstance(context, container, registration, constructor, tInfo.String(), dependencies)
+	instance, err := resolveInstance(container, context, registration, constructor, tInfo.String(), dependencies)
 
 	return instance, err
 }
 
-func resolveMultiple(context ctx.Context, container i.Container, tInfo reflect.Type, registrations []*r.Registration) ([]*reflect.Value, error) {
+func resolveMultiple(container i.Container, context ctx.Context, tInfo reflect.Type, registrations []*r.Registration) ([]*reflect.Value, error) {
 	var reflections []*reflect.Value
 	for _, registration := range registrations {
-		constructor := registration.Construction
-		dependencies, err := getDependencies(context, container, tInfo.String(), constructor)
+		constructor := registration.Construction // Assuming registration.Construction is the constructor function
+		dependencies, err := getDependencies(container, context, tInfo.String(), constructor)
 		if err != nil {
 			return nil, err
 		}
 
-		reflection, err := resolveInstance(context, container, registration, constructor, tInfo.String(), dependencies)
+		reflection, err := resolveInstance(container, context, registration, constructor, tInfo.String(), dependencies)
 		if err != nil {
 			return nil, te.New("Error resolving " + constructor.Info.Name()).Join(err)
 		}
@@ -177,8 +177,8 @@ func resolveMultiple(context ctx.Context, container i.Container, tInfo reflect.T
 }
 
 func getDependencies(
-	context ctx.Context,
 	container i.Container,
+	context ctx.Context,
 	originalConstructorName string,
 	construction c.Construction,
 ) ([]*reflect.Value, error) {
@@ -192,7 +192,7 @@ func getDependencies(
 			dependency = &val
 		} else {
 			var err error
-			dependency, err = resolve(context, container, dependencyInfo)
+			dependency, err = resolve(container, context, dependencyInfo)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -207,8 +207,8 @@ func getDependencies(
 }
 
 func resolveInstance(
+	container i.Container, // container should be the first argument
 	context ctx.Context,
-	container i.Container,
 	registration *r.Registration,
 	ctor c.Construction,
 	name string,
@@ -225,7 +225,7 @@ func resolveInstance(
 				err:   err,
 			}
 			container.GetSingletonCache().Store(registration, result)
-		})
+		}) // Assuming registration.SingletonOnce is a sync.Once
 		return resolveSingleton(container, registration)
 	case s.PerContext:
 		return resolvePerContext(context, registration, ctor, name, dependencies)

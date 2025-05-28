@@ -134,7 +134,7 @@ func TestGetRegistrations_ReturnedValuesAreImmutable(t *testing.T) {
 	assert.True(found)
 	assert.Equal(2, len(regs))
 
-	regs = regs[:1]
+	_ = regs[:1]
 
 	newCopy, found := cb.GetRegistrations[ss.IIndependentStruct](containerBuilder)
 	assert.True(found)
@@ -167,7 +167,7 @@ func TestBuild_ReturnsContainer(t *testing.T) {
 	assert.NotNil(container)
 	assert.True(containerBuilder.IsBuilt())
 
-	self, err := GoFac.Resolve[i.Container](ctx.Background(), container)
+	self, err := GoFac.Resolve[i.Container](container, ctx.Background())
 	assert.Nil(err)
 	assert.Equal(container, self)
 }
@@ -179,7 +179,7 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 	containerBuilder.Register(ss.NewIndependentStruct)
 	containerBuilder.Register(
 		func(container i.Container) (ss.IIndependentStruct, error) {
-			return GoFac.Resolve[*ss.IndependentStruct](ctx.Background(), container)
+			return GoFac.Resolve[*ss.IndependentStruct](container, ctx.Background())
 		},
 		RegistrationOptions.As[ss.IIndependentStruct],
 	)
@@ -189,13 +189,13 @@ func TestBuild_AbleToResolveContainerAndTheDependencyInIt(t *testing.T) {
 		assert.Fail(err.Error())
 	}
 
-	sample1, err := GoFac.Resolve[*ss.IndependentStruct](ctx.Background(), container)
+	sample1, err := GoFac.Resolve[*ss.IndependentStruct](container, ctx.Background())
 	assert.NotNil(sample1)
 	if err != nil {
 		assert.Fail(err.Error())
 	}
 
-	sample2, err := GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+	sample2, err := GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 	assert.NotNil(sample2)
 	if err != nil {
 		assert.Fail(err.Error())

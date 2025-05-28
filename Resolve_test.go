@@ -33,7 +33,7 @@ func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -76,7 +76,7 @@ func TestResolve_AbleToResolveContext(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IIndependentStruct](ctx, container)
+			result, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -106,7 +106,7 @@ func TestResolve_AbleToResolveSelf(t *testing.T) {
 	var result *ss.IndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[*ss.IndependentStruct](ctx.Background(), container)
+			result, err = GoFac.Resolve[*ss.IndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -141,7 +141,7 @@ func TestResolveNamed_AbleToResolve(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), container, "hi!")
+			result, err = GoFac.ResolveNamed[ss.IIndependentStruct](container, ctx.Background(), "hi!") // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -177,7 +177,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -189,7 +189,7 @@ func TestResolve_AbleToResolveUnderMultipleInterfaces(t *testing.T) {
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct2](ctx.Background(), container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct2](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -219,7 +219,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -231,7 +231,7 @@ func TestResolve_ResolvesTwoDifferentInstances_InstancesAreNotRegisteredAsSingle
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -261,7 +261,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -277,7 +277,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingleton(t *testing.T) {
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -314,7 +314,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -330,7 +330,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonUnderDifferentTy
 	var result2 ss.IIndependentStruct2
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct2](ctx.Background(), container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct2](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -363,7 +363,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -379,7 +379,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -393,7 +393,7 @@ func TestResolve_ResolvesOneInstance_ObjectRegisteredAsSingletonAndItAppliesToDe
 	var result3 ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result3, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
+			result3, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -423,7 +423,7 @@ func TestResolve_CannotResolve_ConstructorThrowsError(t *testing.T) {
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -467,7 +467,7 @@ func TestResolve_AbleToResolveInterfaceRelyingOnIndependentStruct(t *testing.T) 
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
+			result, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -504,7 +504,7 @@ func TestResolve_CannotResolveInterfaceRelyingOnIndependentStruct_DependencyNotR
 	var result ss.IStructRelyingOnIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStruct](ctx.Background(), container)
+			result, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -555,7 +555,7 @@ func TestResolve_ResolvesStructWithSliceInputSuccessfully(t *testing.T) {
 	var result ss.IStructRelyingOnIndependentStructs
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStructs](ctx.Background(), container)
+			result, err = GoFac.Resolve[ss.IStructRelyingOnIndependentStructs](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -598,7 +598,7 @@ func TestContainer_Resolve_ResolvesMultipleSuccessfully(t *testing.T) {
 	var result []ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
+			result, err = GoFac.ResolveMultiple[ss.IIndependentStruct](container, ctx.Background()) // Pass ctx.Background() as context
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -634,11 +634,11 @@ func TestContainer_ResolveMultiple_ResolvesSingleton(t *testing.T) {
 	container, err := containerBuilder.Build()
 	assert.Nil(err)
 
-	a1, err := GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+	a1, err := GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 	assert.NotNil(a1)
 	assert.Nil(err)
 
-	as, err := GoFac.ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
+	as, err := GoFac.ResolveMultiple[ss.IIndependentStruct](container, ctx.Background())
 	assert.NotNil(as)
 	assert.NotEmpty(as)
 	assert.Nil(err)
@@ -666,7 +666,7 @@ func TestResolve_ResolveSingletonObject_UnderMultithreading(t *testing.T) {
 	resolutionChannels := make(chan ss.IIndependentStruct, NUM_WORKERS)
 	resolutionFunc := func() {
 		defer wg.Done()
-		if resolution, err := GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container); err != nil {
+		if resolution, err := GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background()); err != nil {
 			assert.Fail(err.Error())
 		} else {
 			resolutionChannels <- resolution
@@ -698,8 +698,7 @@ func TestResolve_CannotResolve_UnregisteredType(t *testing.T) {
 	assert.Nil(err)
 
 	var result ss.IIndependentStruct
-	result, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
-
+	result, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 	assert.Nil(result)
 	assert.Error(err)
 	assert.Equal(
@@ -718,7 +717,7 @@ func TestResolveMultiple_ReturnsMultipleSingletons(t *testing.T) {
 
 	container, err := containerBuilder.Build()
 	assert.Nil(err)
-	slice, err := GoFac.ResolveMultiple[ss.IIndependentStruct](ctx.Background(), container)
+	slice, err := GoFac.ResolveMultiple[ss.IIndependentStruct](container, ctx.Background())
 
 	assert.Nil(err)
 	assert.Len(slice, 2)
@@ -764,7 +763,7 @@ func TestResolveGroup_AbleToResolve(t *testing.T) {
 	var result []ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.ResolveGroup[ss.IIndependentStruct](ctx.Background(), container, "hi!")
+			result, err = GoFac.ResolveGroup[ss.IIndependentStruct](container, ctx.Background(), "hi!")
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -800,7 +799,7 @@ func TestResolve_ReturnsError_WhenResolvingPerContextButContextHasNotBeenRegiste
 	var result ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result, err = GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), container)
+			result, err = GoFac.Resolve[ss.IIndependentStruct](container, ctx.Background())
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -836,7 +835,7 @@ func TestResolve_ResolvedInstancesAreSame_WhenResolvingPerContextUnderSameContex
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](newContext, container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, newContext)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -848,7 +847,7 @@ func TestResolve_ResolvedInstancesAreSame_WhenResolvingPerContextUnderSameContex
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct](newContext, container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct](container, newContext)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -887,7 +886,7 @@ func TestResolve_ResolvedInstancesAreDifferent_WhenResolvingPerContextUnderDiffe
 	var result1 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result1, err = GoFac.Resolve[ss.IIndependentStruct](newContext1, container)
+			result1, err = GoFac.Resolve[ss.IIndependentStruct](container, newContext1)
 		},
 		"Should not have paniced when resolving interface!",
 	)
@@ -902,7 +901,7 @@ func TestResolve_ResolvedInstancesAreDifferent_WhenResolvingPerContextUnderDiffe
 	var result2 ss.IIndependentStruct
 	assert.NotPanics(
 		func() {
-			result2, err = GoFac.Resolve[ss.IIndependentStruct](newContext2, container)
+			result2, err = GoFac.Resolve[ss.IIndependentStruct](container, newContext2)
 		},
 		"Should not have paniced when resolving interface!",
 	)
