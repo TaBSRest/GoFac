@@ -2,7 +2,9 @@ package SampleStructs
 
 import "errors"
 
-type IndependentStruct struct {}
+type IndependentStruct struct {
+	something string // To not make it a Zero-Sized Struct
+}
 
 func NewIndependentStruct() *IndependentStruct {
 	return &IndependentStruct{}

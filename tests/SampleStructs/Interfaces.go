@@ -21,3 +21,14 @@ type IStructRelyingOnIndependentStructs interface {
 	IStructRelyingOnIndependentStructBase
 	ReturnSubStructNames() []string
 }
+
+type ISpecificPerContextStruct interface {
+	IIndependentStruct
+	GetSpecificID() string
+}
+
+type ISingletonWithPerContextDependencyStruct interface {
+	IIndependentStruct
+	GetInitialPerContextDepName() string
+	GetInitialPerContextDepSpecificID() string
+}

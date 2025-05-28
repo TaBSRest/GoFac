@@ -1,4 +1,4 @@
-package Options
+package Registration
 
 import o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
 

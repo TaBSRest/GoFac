@@ -1,25 +1,13 @@
-package scope
+package Scope
 
-type LifetimeScope int
+type LifetimeScope string
 
 const (
-	PerCall LifetimeScope = iota
-	PerRequest
-	PerScope
-	Singleton
+	PerCall    = LifetimeScope("PerCall")
+	PerContext = LifetimeScope("PerContext")
+	Singleton  = LifetimeScope("Singleton")
 )
 
-func (e LifetimeScope) String() string {
-	switch e {
-		case PerCall:
-			return "PerCall"
-		case PerRequest:
-			return "PerRequest"
-		case PerScope:
-			return "PerScope"
-		case Singleton:
-			return "Singleton"
-		default:
-			return "Not an option"
-	}
+func (ls LifetimeScope) String() string {
+	return string(ls)
 }

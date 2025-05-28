@@ -1,8 +1,8 @@
 package Helpers
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 )
 
 func MakeError(location string, msg string) error {

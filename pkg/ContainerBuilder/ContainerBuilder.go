@@ -6,35 +6,44 @@ import (
 	"sync"
 
 	i "github.com/TaBSRest/GoFac/interfaces"
+	"github.com/TaBSRest/GoFac/internal/BuildOption"
 	r "github.com/TaBSRest/GoFac/internal/Registration"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	s "github.com/TaBSRest/GoFac/internal/Scope"
 	te "github.com/TaBSRest/GoFac/internal/TaBSError"
-	gf "github.com/TaBSRest/GoFac/pkg/Container"
+	"github.com/TaBSRest/GoFac/pkg/Container"
 	g "github.com/TaBSRest/GoFac/pkg/ContainerBuilder/Group"
-	"github.com/TaBSRest/GoFac/pkg/Options"
+	RegistrationOptions "github.com/TaBSRest/GoFac/pkg/Options/Registration"
 )
 
 type ContainerBuilder struct {
-	built bool
-	namedRegistrations map[string]*r.Registration
-	grouped map[string]*g.Group
-	cache map[reflect.Type][]*r.Registration
+	built                   bool
+	namedRegistrations      map[string]*r.Registration
+	grouped                 map[string]*g.Group
+	cache                   map[reflect.Type][]*r.Registration
+	perContextRegistrations []*r.Registration
 }
 
 func New() *ContainerBuilder {
+	var perContextRegistrations []*r.Registration
 	return &ContainerBuilder{
-		built: false,
-		namedRegistrations: make(map[string]*r.Registration),
-		grouped: make(map[string]*g.Group),
-		cache: make(map[reflect.Type][]*r.Registration),
+		built:                   false,
+		namedRegistrations:      make(map[string]*r.Registration),
+		grouped:                 make(map[string]*g.Group),
+		cache:                   make(map[reflect.Type][]*r.Registration),
+		perContextRegistrations: perContextRegistrations,
 	}
 }
 
 func (cb *ContainerBuilder) Register(
-	factory any,
+	constructor any,
 	configFunctions ...func(*o.RegistrationOption) error,
 ) error {
-	registrar, err := cb.getRegistrar(factory, configFunctions...)
+	if cb.IsBuilt() {
+		return te.New("Cannot register constructors after the container is built!")
+	}
+
+	registrar, err := cb.getRegistrar(constructor, configFunctions...)
 	if err != nil {
 		return te.New(err.GetMessage())
 	}
@@ -54,26 +63,33 @@ func (cb *ContainerBuilder) Register(
 		groupName := groupInfo.Name
 		if cb.grouped[groupName] == nil {
 			cb.grouped[groupName] = &g.Group{
-				Registrations : make([]*r.Registration, 0),
-				GroupInfo: groupInfo,
+				Registrations: make([]*r.Registration, 0),
+				GroupInfo:     groupInfo,
 			}
 		} else {
 			if cb.grouped[groupName].GroupType != groupInfo.GroupType {
-				return te.New("The type of the group must be consistence for all group members!")
+				return te.New("The type of the group must be consistent for all group members!")
 			}
 		}
 		cb.grouped[groupName].Registrations = append(cb.grouped[groupName].Registrations, registrar)
 	}
 
+	if registrar.Options.Scope == s.PerContext {
+		cb.perContextRegistrations = append(cb.perContextRegistrations, registrar)
+	}
+
 	return nil
 }
 
-func (cb *ContainerBuilder) getRegistrar(factory any, configFunctions ...func(*o.RegistrationOption) error) (*r.Registration, i.TaBSError) {
+func (cb *ContainerBuilder) getRegistrar(
+	constructor any,
+	configFunctions ...func(*o.RegistrationOption) error,
+) (*r.Registration, i.TaBSError) {
 	if cb.IsBuilt() {
 		return nil, te.New("Cannot register constructors after the container is built!")
 	}
 
-	registrar, err := r.NewRegistration(factory, configFunctions...)
+	registrar, err := r.NewRegistration(constructor, configFunctions...)
 	if err != nil {
 		return nil, te.New("Could not register T").Join(err)
 	}
@@ -101,19 +117,27 @@ func (cb *ContainerBuilder) GetRegistrationsFor(registrationType reflect.Type) (
 	return registrations, found
 }
 
-func (cb *ContainerBuilder) Build() (*gf.Container, error) {
+func (cb *ContainerBuilder) Build(
+	configFunctions ...func(*BuildOption.BuildOption),
+) (*Container.Container, error) {
 	if cb.built {
 		return nil, te.New("This ContainerBuilder is already built!")
 	}
 
-	container := &gf.Container{
+	buildOption := BuildOption.New()
+	for _, optionFunction := range configFunctions {
+		optionFunction(buildOption)
+	}
+
+	container := &Container.Container{
 		ContainerBuilder: cb,
+		BuildOption:      buildOption,
 		SingletonCache:   new(sync.Map),
 	}
 
 	err := cb.Register(
 		func() i.Container { return container },
-		Options.AsSingleton,
+		RegistrationOptions.AsSingleton,
 	)
 	if err != nil {
 		return nil, err
@@ -142,4 +166,8 @@ func (cb *ContainerBuilder) GetGroupedRegistrations(name string) ([]*r.Registrat
 		return nil, te.New(fmt.Sprintf("Could not found the registration with the name %s", name))
 	}
 	return registrations.Registrations, nil
+}
+
+func (cb *ContainerBuilder) GetPerContextRegistrations() []*r.Registration {
+	return cb.perContextRegistrations
 }

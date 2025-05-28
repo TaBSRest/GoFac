@@ -5,15 +5,15 @@ import (
 	"reflect"
 	"sync"
 
-	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 	c "github.com/TaBSRest/GoFac/internal/Construction"
 	h "github.com/TaBSRest/GoFac/internal/Helpers"
 	o "github.com/TaBSRest/GoFac/internal/RegistrationOption"
+	te "github.com/TaBSRest/GoFac/internal/TaBSError"
 )
 
 type Registration struct {
-	Construction c.Construction
-	Options  o.RegistrationOption
+	Construction  c.Construction
+	Options       o.RegistrationOption
 	SingletonOnce *sync.Once
 }
 
@@ -26,7 +26,7 @@ func NewRegistration(
 		return nil, err
 	}
 
-	var options  = o.NewRegistrationOption()
+	var options = o.NewRegistrationOption()
 	var errors []error
 	for _, config := range ConfigurationFunctions {
 		if err := config(options); err != nil {
@@ -57,13 +57,13 @@ func NewRegistration(
 	}
 
 	return &Registration{
-		Construction: construction,
-		Options:  *options,
+		Construction:  construction,
+		Options:       *options,
 		SingletonOnce: new(sync.Once),
 	}, nil
 }
 
-func constructorErrorChecks(constructor any, constructorTypeInfo reflect.Type) (error) {
+func constructorErrorChecks(constructor any, constructorTypeInfo reflect.Type) error {
 	if constructor == nil {
 		return h.MakeError("Registration.NewRegistration", "Constructor is nil!")
 	}
