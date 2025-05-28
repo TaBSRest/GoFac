@@ -127,11 +127,11 @@ func setupContainer(t *testing.T) {
 
 		registerError = containerBuilder.Register(
 			func(c i.Container) (ss.IStructRelyingOnIndependentStruct, error) {
-				sDep, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
+				singletonDependency, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
 				if err != nil {
-					return nil, fmt.Errorf("factoryForPerContextWithSingletonDep: failed to resolve Singleton_S: %w", err)
+					return nil, err
 				}
-				return ss.NewStructRelyingOnIndependentStruct(sDep), nil
+				return ss.NewStructRelyingOnIndependentStruct(singletonDependency), nil
 			},
 			RegistrationOptions.As[ss.IStructRelyingOnIndependentStruct],
 			RegistrationOptions.PerContext,
@@ -143,12 +143,12 @@ func setupContainer(t *testing.T) {
 		}
 
 		registerError = containerBuilder.Register(
-			func(c i.Container, specificPcDep ss.ISpecificPerContextStruct) (ss.ISingletonWithPerContextDependencyStruct, error) {
-				sMain, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
+			func(c i.Container, specificPerContextDependency ss.ISpecificPerContextStruct) (ss.ISingletonWithPerContextDependencyStruct, error) {
+				singletonMain, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
 				if err != nil {
 					return nil, err
 				}
-				return ss.NewSingletonWithSpecificPerContextDependencyStruct(sMain, specificPcDep), nil
+				return ss.NewSingletonWithSpecificPerContextDependencyStruct(singletonMain, specificPerContextDependency), nil
 			},
 			RegistrationOptions.As[ss.ISingletonWithPerContextDependencyStruct],
 			RegistrationOptions.AsSingleton,
@@ -239,11 +239,13 @@ func initializeScenarios(t *testing.T) {
 				instance1b, err := GoFac.ResolveNamed[ss.IIndependentStruct](registeredContext1, c, "PerContext_A")
 				assert.Nil(err)
 				assert.NotNil(instance1b)
+
 				assert.Same(instance1a, instance1b, "Instances from the same context should be the same (PerContext_A)")
 
 				instance2, err := GoFac.ResolveNamed[ss.IIndependentStruct](registeredContext2, c, "PerContext_A")
 				assert.Nil(err)
 				assert.NotNil(instance2)
+
 				assert.NotSame(instance1a, instance2, "Instances from different contexts should not be the same (PerContext_A)")
 
 				_, err = GoFac.ResolveNamed[ss.IIndependentStruct](unregisteredContext3, c, "PerContext_A")
