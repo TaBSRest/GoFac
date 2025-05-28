@@ -21,6 +21,8 @@ import (
 
 const num_GOROUTINES = 5000
 
+type token string
+
 var (
 	scenarios  []scenario
 	container  i.Container
@@ -127,7 +129,7 @@ func setupContainer(t *testing.T) {
 
 		registerError = containerBuilder.Register(
 			func(c i.Container) (ss.IStructRelyingOnIndependentStruct, error) {
-				singletonDependency, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
+				singletonDependency, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, ctx.Background(), "Singleton_S")
 				if err != nil {
 					return nil, err
 				}
@@ -144,7 +146,7 @@ func setupContainer(t *testing.T) {
 
 		registerError = containerBuilder.Register(
 			func(c i.Container, specificPerContextDependency ss.ISpecificPerContextStruct) (ss.ISingletonWithPerContextDependencyStruct, error) {
-				singletonMain, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
+				singletonMain, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, ctx.Background(), "Singleton_S")
 				if err != nil {
 					return nil, err
 				}
@@ -189,7 +191,7 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Simple",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				instance, err := GoFac.Resolve[ss.IIndependentStruct](ctx.Background(), c)
+				instance, err := GoFac.Resolve[ss.IIndependentStruct](c, ctx.Background())
 				assert.Nil(err)
 				assert.NotNil(instance)
 				assert.Equal("IndependentStructB", instance.ReturnNameIndependentStruct())
@@ -198,7 +200,7 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Named",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				instance, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Named_A")
+				instance, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, ctx.Background(), "Named_A")
 				assert.Nil(err)
 				assert.NotNil(instance)
 				assert.Equal("IndependentStruct", instance.ReturnNameIndependentStruct())
@@ -207,11 +209,11 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Singleton",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				instance1, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
+				instance1, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, ctx.Background(), "Singleton_S")
 				assert.Nil(err)
 				assert.NotNil(instance1)
 
-				instance2, err := GoFac.ResolveNamed[ss.IIndependentStruct](ctx.Background(), c, "Singleton_S")
+				instance2, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, ctx.Background(), "Singleton_S")
 				assert.Nil(err)
 				assert.NotNil(instance2)
 
@@ -221,9 +223,9 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve PerContext",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				contextKey1 := fmt.Sprintf("ContextKey1_Scenario%d", scenarioID)
-				contextKey2 := fmt.Sprintf("ContextKey2_Scenario%d", scenarioID)
-				contextKey3 := fmt.Sprintf("ContextKey3_Scenario%d", scenarioID)
+				contextKey1 := token(fmt.Sprintf("ContextKey1_Scenario%d", scenarioID))
+				contextKey2 := token(fmt.Sprintf("ContextKey2_Scenario%d", scenarioID))
+				contextKey3 := token(fmt.Sprintf("ContextKey3_Scenario%d", scenarioID))
 
 				unregisteredContext1 := ctx.WithValue(ctx.Background(), contextKey1, "ContextValue1")
 				unregisteredContext2 := ctx.WithValue(ctx.Background(), contextKey2, "ContextValue2")
@@ -232,23 +234,22 @@ func initializeScenarios(t *testing.T) {
 				registeredContext1 := c.RegisterContext(unregisteredContext1)
 				registeredContext2 := c.RegisterContext(unregisteredContext2)
 
-				instance1a, err := GoFac.ResolveNamed[ss.IIndependentStruct](registeredContext1, c, "PerContext_A")
+				instance1a, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, registeredContext1, "PerContext_A")
 				assert.Nil(err)
 				assert.NotNil(instance1a)
 
-				instance1b, err := GoFac.ResolveNamed[ss.IIndependentStruct](registeredContext1, c, "PerContext_A")
+				instance1b, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, registeredContext1, "PerContext_A")
 				assert.Nil(err)
 				assert.NotNil(instance1b)
 
 				assert.Same(instance1a, instance1b, "Instances from the same context should be the same (PerContext_A)")
 
-				instance2, err := GoFac.ResolveNamed[ss.IIndependentStruct](registeredContext2, c, "PerContext_A")
+				instance2, err := GoFac.ResolveNamed[ss.IIndependentStruct](c, registeredContext2, "PerContext_A")
 				assert.Nil(err)
 				assert.NotNil(instance2)
 
 				assert.NotSame(instance1a, instance2, "Instances from different contexts should not be the same (PerContext_A)")
-
-				_, err = GoFac.ResolveNamed[ss.IIndependentStruct](unregisteredContext3, c, "PerContext_A")
+				_, err = GoFac.ResolveNamed[ss.IIndependentStruct](c, unregisteredContext3, "PerContext_A")
 				assert.NotNil(err)
 				assert.Contains(err.Error(), "GoFac.resolvePerContext: The context is not registered to GoFac")
 			},
@@ -256,10 +257,10 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Array with Registered Context",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				contextKey := fmt.Sprintf("ContextKey_Scenario%d", scenarioID)
+				contextKey := token(fmt.Sprintf("ContextKey_Scenario%d", scenarioID))
 				registeredContext := c.RegisterContext(ctx.WithValue(ctx.Background(), contextKey, "ContextValue"))
 
-				instances, err := GoFac.ResolveMultiple[ss.IIndependentStruct](registeredContext, c)
+				instances, err := GoFac.ResolveMultiple[ss.IIndependentStruct](c, registeredContext)
 				assert.Nil(err)
 				assert.NotNil(instances)
 
@@ -270,7 +271,7 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Array with Unregistered Context Expecting Error",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				_, err := GoFac.ResolveMultiple[ss.IIndependentStruct](ctx.Background(), c)
+				_, err := GoFac.ResolveMultiple[ss.IIndependentStruct](c, ctx.Background())
 				assert.NotNil(err)
 				assert.Contains(err.Error(), "GoFac.resolvePerContext: The context is not registered to GoFac")
 			},
@@ -278,7 +279,7 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Group",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				instances, err := GoFac.ResolveGroup[ss.IIndependentStruct](ctx.Background(), c, "Group")
+				instances, err := GoFac.ResolveGroup[ss.IIndependentStruct](c, ctx.Background(), "Group")
 				assert.Nil(err)
 				assert.Len(instances, 2)
 
@@ -297,18 +298,18 @@ func initializeScenarios(t *testing.T) {
 				contextValue1 := fmt.Sprintf("ContextValue1_Scenario%d", scenarioID)
 				contextValue2 := fmt.Sprintf("ContextValue2_Scenario%d", scenarioID)
 
-				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue1))
-				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue2))
+				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue1))
+				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue2))
 
-				parent1a, err1a := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](registeredContext1, c, "ArrayDependencyPerContextParent")
+				parent1a, err1a := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](c, registeredContext1, "ArrayDependencyPerContextParent")
 				assert.Nil(err1a)
 
-				parent1b, err1b := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](registeredContext1, c, "ArrayDependencyPerContextParent")
+				parent1b, err1b := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](c, registeredContext1, "ArrayDependencyPerContextParent")
 				assert.Nil(err1b)
 
 				assert.Same(parent1a, parent1b, "Parent (ArrayDependencyPerContextParent) from same context should be same")
 
-				parent2, err2 := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](registeredContext2, c, "ArrayDependencyPerContextParent")
+				parent2, err2 := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](c, registeredContext2, "ArrayDependencyPerContextParent")
 				assert.Nil(err2)
 
 				assert.NotSame(parent1a, parent2, "Parent (ArrayDependencyPerContextParent) from different contexts should be different")
@@ -320,18 +321,18 @@ func initializeScenarios(t *testing.T) {
 				contextValue1 := fmt.Sprintf("ContextValue1_Scenario%d", scenarioID)
 				contextValue2 := fmt.Sprintf("ContextValue2_Scenario%d", scenarioID)
 
-				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue1))
-				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue2))
+				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue1))
+				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue2))
 
-				instance1a, err1a := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](registeredContext1, c, "PerContextWithSingletonDependency")
+				instance1a, err1a := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](c, registeredContext1, "PerContextWithSingletonDependency")
 				assert.Nil(err1a)
 
-				instance1b, err1b := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](registeredContext1, c, "PerContextWithSingletonDependency")
+				instance1b, err1b := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](c, registeredContext1, "PerContextWithSingletonDependency")
 				assert.Nil(err1b)
 
 				assert.Same(instance1a, instance1b, "PerContext instance with Singleton dependency from same context should be same")
 
-				instance2, err2 := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](registeredContext2, c, "PerContextWithSingletonDependency")
+				instance2, err2 := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](c, registeredContext2, "PerContextWithSingletonDependency")
 				assert.Nil(err2)
 
 				assert.NotSame(instance1a, instance2, "PerContext service with Singleton dependency from different contexts should be different")
@@ -342,25 +343,25 @@ func initializeScenarios(t *testing.T) {
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
 				contextValue1 := fmt.Sprintf("s%d_cValA_gr%d", scenarioID, rand.Int())
 				contextValue2 := fmt.Sprintf("s%d_cValB_gr%d", scenarioID, rand.Int())
-				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), "cKey1", contextValue1))
-				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), "cKey2", contextValue2))
+				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("cKey1"), contextValue1))
+				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("cKey2"), contextValue2))
 
 				var firstInstance ss.ISingletonWithPerContextDependencyStruct
 				var initialPerContextDependencyID string
 
-				instance1, err := GoFac.ResolveNamed[ss.ISingletonWithPerContextDependencyStruct](registeredContext1, c, "SingletonWithSpecificPerContextDependency")
+				instance1, err := GoFac.ResolveNamed[ss.ISingletonWithPerContextDependencyStruct](c, registeredContext1, "SingletonWithSpecificPerContextDependency")
 				assert.Nil(err)
 				assert.NotNil(instance1)
 				firstInstance = instance1
 				initialPerContextDependencyID = instance1.GetInitialPerContextDepSpecificID()
 				assert.NotEmpty(initialPerContextDependencyID, "Initial PerContext Depndency ID should be captured")
 
-				instance1Again, err := GoFac.ResolveNamed[ss.ISingletonWithPerContextDependencyStruct](registeredContext1, c, "SingletonWithSpecificPerContextDependency")
+				instance1Again, err := GoFac.ResolveNamed[ss.ISingletonWithPerContextDependencyStruct](c, registeredContext1, "SingletonWithSpecificPerContextDependency")
 				assert.Nil(err)
 				assert.Same(firstInstance, instance1Again, "Singleton instance should be same on subsequent calls with same context")
 				assert.Equal(initialPerContextDependencyID, instance1Again.GetInitialPerContextDepSpecificID(), "Captured PC dep ID should be consistent")
 
-				instance2, err := GoFac.ResolveNamed[ss.ISingletonWithPerContextDependencyStruct](registeredContext2, c, "SingletonWithSpecificPerContextDependency")
+				instance2, err := GoFac.ResolveNamed[ss.ISingletonWithPerContextDependencyStruct](c, registeredContext2, "SingletonWithSpecificPerContextDependency")
 				assert.Nil(err)
 				assert.Same(firstInstance, instance2, "Singleton instance should be same even with different context")
 				assert.Equal(initialPerContextDependencyID, instance2.GetInitialPerContextDepSpecificID(), "Captured PC dep ID should remain from the very first resolution")
