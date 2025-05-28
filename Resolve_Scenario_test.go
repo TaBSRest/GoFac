@@ -21,6 +21,8 @@ import (
 
 const num_GOROUTINES = 5000
 
+type token string
+
 var (
 	scenarios  []scenario
 	container  i.Container
@@ -221,9 +223,9 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve PerContext",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				contextKey1 := fmt.Sprintf("ContextKey1_Scenario%d", scenarioID)
-				contextKey2 := fmt.Sprintf("ContextKey2_Scenario%d", scenarioID)
-				contextKey3 := fmt.Sprintf("ContextKey3_Scenario%d", scenarioID)
+				contextKey1 := token(fmt.Sprintf("ContextKey1_Scenario%d", scenarioID))
+				contextKey2 := token(fmt.Sprintf("ContextKey2_Scenario%d", scenarioID))
+				contextKey3 := token(fmt.Sprintf("ContextKey3_Scenario%d", scenarioID))
 
 				unregisteredContext1 := ctx.WithValue(ctx.Background(), contextKey1, "ContextValue1")
 				unregisteredContext2 := ctx.WithValue(ctx.Background(), contextKey2, "ContextValue2")
@@ -256,7 +258,7 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Array with Registered Context",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				contextKey := fmt.Sprintf("ContextKey_Scenario%d", scenarioID)
+				contextKey := token(fmt.Sprintf("ContextKey_Scenario%d", scenarioID))
 				registeredContext := c.RegisterContext(ctx.WithValue(ctx.Background(), contextKey, "ContextValue"))
 
 				instances, err := GoFac.ResolveMultiple[ss.IIndependentStruct](registeredContext, c)
@@ -297,8 +299,8 @@ func initializeScenarios(t *testing.T) {
 				contextValue1 := fmt.Sprintf("ContextValue1_Scenario%d", scenarioID)
 				contextValue2 := fmt.Sprintf("ContextValue2_Scenario%d", scenarioID)
 
-				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue1))
-				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue2))
+				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue1))
+				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue2))
 
 				parent1a, err1a := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStructs](registeredContext1, c, "ArrayDependencyPerContextParent")
 				assert.Nil(err1a)
@@ -320,8 +322,8 @@ func initializeScenarios(t *testing.T) {
 				contextValue1 := fmt.Sprintf("ContextValue1_Scenario%d", scenarioID)
 				contextValue2 := fmt.Sprintf("ContextValue2_Scenario%d", scenarioID)
 
-				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue1))
-				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), "ContextKey", contextValue2))
+				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue1))
+				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("ContextKey"), contextValue2))
 
 				instance1a, err1a := GoFac.ResolveNamed[ss.IStructRelyingOnIndependentStruct](registeredContext1, c, "PerContextWithSingletonDependency")
 				assert.Nil(err1a)
@@ -342,8 +344,8 @@ func initializeScenarios(t *testing.T) {
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
 				contextValue1 := fmt.Sprintf("s%d_cValA_gr%d", scenarioID, rand.Int())
 				contextValue2 := fmt.Sprintf("s%d_cValB_gr%d", scenarioID, rand.Int())
-				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), "cKey1", contextValue1))
-				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), "cKey2", contextValue2))
+				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("cKey1"), contextValue1))
+				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("cKey2"), contextValue2))
 
 				var firstInstance ss.ISingletonWithPerContextDependencyStruct
 				var initialPerContextDependencyID string

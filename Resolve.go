@@ -185,10 +185,17 @@ func getDependencies(
 	var errs []error
 	dependencies := make([]*reflect.Value, construction.Info.NumIn())
 	for i := range construction.Info.NumIn() {
+		var dependency *reflect.Value
 		dependencyInfo := construction.Info.In(i)
-		dependency, err := resolve(context, container, dependencyInfo)
-		if err != nil {
-			errs = append(errs, err)
+		if dependencyInfo == reflect.TypeFor[ctx.Context]() {
+			val := reflect.ValueOf(context)
+			dependency = &val
+		} else {
+			var err error
+			dependency, err = resolve(context, container, dependencyInfo)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
 
 		dependencies[i] = dependency

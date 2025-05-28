@@ -43,6 +43,49 @@ func TestResolve_AbleToResolveSimpleObject(t *testing.T) {
 	assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct(), "Functions should be able to run")
 }
 
+func TestResolve_AbleToResolveContext(t *testing.T) {
+	assert := assert.New(t)
+	type token string
+	ctxToken := token("hi")
+
+	containerBuilder := ContainerBuilder.New()
+	var err error
+	assert.NotPanics(
+		func() {
+			err = containerBuilder.Register(func(ctx ctx.Context) (*ss.IndependentStruct, error) {
+				if !ctx.Value(ctxToken).(bool) {
+					assert.Fail("context does not exist")
+				}
+				return &ss.IndependentStruct{}, nil
+			}, RegistrationOptions.As[ss.IIndependentStruct])
+		},
+		"Should not have paniced!",
+	)
+	assert.Nil(err, "No Error should have happened")
+
+	ctx := ctx.WithValue(ctx.Background(), token(ctxToken), true)
+	if !ctx.Value(ctxToken).(bool) {
+		assert.Fail("context does not exist")
+	}
+
+	container, err := containerBuilder.Build()
+	assert.Nil(err)
+
+	ctx = container.RegisterContext(ctx)
+
+	var result ss.IIndependentStruct
+	assert.NotPanics(
+		func() {
+			result, err = GoFac.Resolve[ss.IIndependentStruct](ctx, container)
+		},
+		"Should not have paniced when resolving interface!",
+	)
+
+	assert.NotNil(result, "Resolved object should not be nil!")
+	assert.Nil(err, "Should not have any error!")
+	assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct(), "Functions should be able to run")
+}
+
 func TestResolve_AbleToResolveSelf(t *testing.T) {
 	assert := assert.New(t)
 
