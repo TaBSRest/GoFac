@@ -1,0 +1,63 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+name: Go
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "**"
+jobs:
+  build:
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check Out the Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Run Tests
+        run: make test
+    
+      - name: Update Coverage
+        run: |
+          if [ ! -f ./coverage/LineCoverage.txt ]; then
+            echo "Error: ./coverage/LineCoverage.txt does not exist."
+            exit 1
+          fi
+
+          PREVIOUS_COVERAGE=$(cat ./coverage/LineCoverage.txt | grep -oP '\d+(\.\d+)?%' | sed 's/%//')
+          if [ -z "$PREVIOUS_COVERAGE" ]; then
+            echo "Warning: LineCoverage.txt is empty or invalid. Using default code coverage of 0%."
+            PREVIOUS_COVERAGE=0
+          fi
+
+          CURRENT_COVERAGE=$(make checkCoverage | grep -oP '\d+(\.\d+)?%' | sed 's/%//')
+
+          echo "Previous Coverage: $PREVIOUS_COVERAGE"
+          echo "Current Coverage: $CURRENT_COVERAGE"
+
+          if [ "$(echo "$CURRENT_COVERAGE < $PREVIOUS_COVERAGE" | bc)" -eq 1 ]; then
+            echo "The code coverage has dropped from $PREVIOUS_COVERAGE% to $CURRENT_COVERAGE%."
+            exit 1
+          elif [ "$(echo "$CURRENT_COVERAGE > $PREVIOUS_COVERAGE" | bc)" -eq 1 ]; then
+            echo "The code coverage has increased from $PREVIOUS_COVERAGE% to $CURRENT_COVERAGE%."
+            echo "Updating LineCoverage.txt..."
+            echo "$CURRENT_COVERAGE%" > ./coverage/LineCoverage.txt
+            echo "LineCoverage.txt has been updated."
+            echo "LINECOVERAGE_UPDATED=true" >> $GITHUB_ENV
+          else
+            echo "The code coverage $CURRENT_COVERAGE% has not been changed."
+          fi
+      
+      - name: Push Updated LineCoverage File
+        if: env.LINECOVERAGE_UPDATED == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update the LineCoverage"
+          file_pattern: "coverage/LineCoverage.txt"
+          branch: ${{ github.head_ref }}
