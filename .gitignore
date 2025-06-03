@@ -24,3 +24,6 @@ go.work
 coverage/cover.txt
 coverage/dump.txt
 Results.html
+
+# Desktop Services Store
+**/.DS_Store
