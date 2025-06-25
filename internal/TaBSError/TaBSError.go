@@ -112,3 +112,7 @@ func getCallerLocation(skipFrames int) string {
 func (e *TaBSError) GetMessage() string {
 	return e.message
 }
+
+func (e *TaBSError) Unwrap() []error {
+	return e.children
+}
