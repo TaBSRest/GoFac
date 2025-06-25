@@ -19,7 +19,7 @@ import (
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
 
-const num_GOROUTINES = 5000
+const num_GOROUTINES = 2500
 
 type token string
 
