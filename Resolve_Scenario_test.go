@@ -385,18 +385,22 @@ func TestResolve_DoesNotOccurRaceCondition(t *testing.T) {
 		t.Fatalf("Container was not built. Setup error: %v", setupError)
 	}
 
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(num_GOROUTINES)
+	var waitGroupForNecessaryTests sync.WaitGroup
 
 	for i := 0; i < len(scenarios); i++ {
+		waitGroupForNecessaryTests.Add(1)
 		go func(goroutineID int) {
-			defer waitGroup.Done()
+			defer waitGroupForNecessaryTests.Done()
 
 			selectedScenario := scenarios[i]
 
 			selectedScenario.runResolve(t, container, goroutineID)
 		}(i)
 	}
+	waitGroupForNecessaryTests.Wait()
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(num_GOROUTINES)
 
 	for i := 0; i < num_GOROUTINES; i++ {
 		go func(goroutineID int) {
