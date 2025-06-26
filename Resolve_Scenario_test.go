@@ -388,6 +388,16 @@ func TestResolve_DoesNotOccurRaceCondition(t *testing.T) {
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(num_GOROUTINES)
 
+	for i := 0; i < len(scenarios); i++ {
+		go func(goroutineID int) {
+			defer waitGroup.Done()
+
+			selectedScenario := scenarios[i]
+
+			selectedScenario.runResolve(t, container, goroutineID)
+		}(i)
+	}
+
 	for i := 0; i < num_GOROUTINES; i++ {
 		go func(goroutineID int) {
 			defer waitGroup.Done()
