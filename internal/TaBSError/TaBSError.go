@@ -113,9 +113,6 @@ func (e *TaBSError) GetMessage() string {
 	return e.message
 }
 
-func (e *TaBSError) Unwrap() error {
-	if len(e.children) == 0 {
-		return e.children[0] // Pick the first child as the primary cause
-	}
-	return New("The error contains multilpe errors. It cannot unwrap to one error.")
+func (e *TaBSError) Unwrap() []error {
+	return e.children
 }
