@@ -45,7 +45,7 @@ func (cb *ContainerBuilder) Register(
 
 	registrar, err := cb.getRegistrar(constructor, configFunctions...)
 	if err != nil {
-		return err
+		return te.New("Couldn't get registrar").Join(err)
 	}
 
 	cb.register(registrar)
