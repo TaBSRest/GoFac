@@ -45,7 +45,7 @@ func (cb *ContainerBuilder) Register(
 
 	registrar, err := cb.getRegistrar(constructor, configFunctions...)
 	if err != nil {
-		return te.New(err.GetMessage())
+		return err
 	}
 
 	cb.register(registrar)
@@ -84,7 +84,7 @@ func (cb *ContainerBuilder) Register(
 func (cb *ContainerBuilder) getRegistrar(
 	constructor any,
 	configFunctions ...func(*o.RegistrationOption) error,
-) (*r.Registration, i.TaBSError) {
+) (*r.Registration, error) {
 	if cb.IsBuilt() {
 		return nil, te.New("Cannot register constructors after the container is built!")
 	}
