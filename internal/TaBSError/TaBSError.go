@@ -109,10 +109,6 @@ func getCallerLocation(skipFrames int) string {
 	return fmt.Sprintf("%s.%s", location, parts[len(parts)-1])
 }
 
-func (e *TaBSError) GetMessage() string {
-	return e.message
-}
-
 func (e *TaBSError) Unwrap() []error {
 	return e.children
 }
