@@ -41,8 +41,8 @@ Some useful registration options include:
 * Scope options to control lifetime:
   * `ro.PerCall` – create a new instance on each resolve.
   * `ro.PerContext` – share one instance per context. Contexts must be
-    registered with GoFac using `container.RegisterContext` before
     they are used for resolving so the container can track them.
+    If you attempt to resolve with an unregistered context, GoFac will return an error indicating the context is not tracked.
   * `ro.AsSingleton` – create a single instance at build time.
 
 Example using a scope option:
