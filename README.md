@@ -1,64 +1,83 @@
 # GoFac
 
-AutoFac (from C#) like open-source Dependency Injection Container. It contains the lifetime management features for dependencies.
+## Introduction
+GoFac is an AutoFac-like dependency injection container for Go. It provides lifetime management, named registrations, and grouping so you can describe how components are created and resolved in your application.
 
-## Usage
+The typical workflow is:
+1. create a container builder,
+2. register constructors for your components,
+3. build the container, and
+4. resolve the dependencies you need.
 
-It follows a simple pattern of creating container, registering dependencies, building the container, and resolving the dependencies. Going back a step is not allowed.
+## Registration
+Use a container builder to register the constructors for the types you want to resolve later.
 
-1. Creating the Container
+```go
+import (
+    cb "github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
+    ro "github.com/TaBSRest/GoFac/pkg/Options/Registration"
+)
 
-```golang
-    var container GoFac.Container = GoFac.NewContainer()
+builder := cb.New()
+
+// basic registration
+builder.Register(NewFoo)
+
+// registration with options
+builder.Register(
+    NewBar,
+    ro.As[IBar],
+    ro.Named("special"),
+    ro.AsSingleton,
+)
 ```
 
-2. Registering Dependencies
+### Options for registration
+Some useful registration options include:
 
-There are several methods for registering a dependency.
+* `ro.As[T]` – expose the registration as interface `T`.
+* `ro.Named("name")` – give the registration a unique name.
+* `ro.Grouped[T]("group")` – add the registration to a group.
+* Scope options to control lifetime:
+  * `ro.PerCall` – create a new instance on each resolve.
+  * `ro.PerContext` – share one instance per context. Contexts must be
+    registered with GoFac using `container.RegisterContext` before
+    they are used for resolving so the container can track them.
+  * `ro.AsSingleton` – create a single instance at build time.
 
-  * Normal Registration
+Example using a scope option:
 
-```golang
-    container.RegisterConstructor[T interface](
-        GoFac Container;
-        Constructor for the concrete implementation of the interface;
-        Functions that accept *RegistrationOption, change the option, and returns error
-    )
+```go
+builder.Register(NewCache, ro.As[ICache], ro.PerContext)
 ```
 
-## Appendix 1. Registration Options
+When using `ro.PerContext`, register each `context.Context` with the
+container before resolving so GoFac can reuse instances within that
+scope:
 
-### Scope
-
-There are four out-of-the-box options for controling the scope.
-
-```golang
-    import (
-        o "github.com/pyj4104/GoFac/pkg/Options"
-        ro "github.com/pyj4104/GoFac/internal/RegistrationOption"
-    )
-
-    option := ro.NewRegistrationOption()
-
-    o.PerCall(option)
-    o.PerRequest(option)
-    o.PerScope(option)
-    o.AsSingleton(option)
+```go
+ctx := container.RegisterContext(context.Background())
 ```
 
-* PerCall: If registered as PerCall, the object will be created anew whenever it is needed.
-* PerRequest: If registered as PerRequest, the object will be created anew per request for a dependency.
-* PerScope: If registered as PerScope, the object will be created anew per context.
-* AsSingleton: If registered as singleton, the object will be created at the build time.
+## Resolve
+After registration, build the container and resolve the dependencies.
 
-### Registration Option Usage
+```go
+container, err := builder.Build()
+if err != nil {
+    panic(err)
+}
 
-```golang
-    container.RegisterConstructor[T interface](
-        container,
-        somePackage.NewStruct(),
-        PerCall, PerRequest, AsSingleton, PerScope
-    )
+ctx := container.RegisterContext(context.Background())
+cache, err := GoFac.Resolve[ICache](container, ctx)
+if err != nil {
+    panic(err)
+}
 ```
 
-The last one to be called will be used. (In this case, the dependency will be registered as PerScope)
+## Installation
+Add GoFac to your module with `go get`:
+
+```bash
+go get github.com/TaBSRest/GoFac
+```
