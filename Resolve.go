@@ -216,10 +216,8 @@ func resolveInstance(
 ) (*reflect.Value, error) {
 	switch registration.Options.Scope {
 	case s.Singleton:
-		var val *reflect.Value
-		var err error
 		registration.SingletonOnce.Do(func() {
-			val, err = runConstructor(ctor, name, dependencies)
+			val, err := runConstructor(ctor, name, dependencies)
 			result := &singletonCreationResult{
 				value: val,
 				err:   err,
@@ -243,7 +241,7 @@ func resolveSingleton(container i.Container, registration *r.Registration) (*ref
 		}
 		return val.value, val.err
 	}
-	return nil, te.New("SingletonCache not found!")
+	return nil, te.New(fmt.Sprintf("Singleton instance for registration %+v not found in cache", registration))
 }
 
 func resolvePerContext(
