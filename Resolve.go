@@ -265,10 +265,8 @@ func resolvePerContext(
 		return contextRegistration.Instance, nil
 	}
 
-	var val *reflect.Value
-	var err error
 	contextRegistration.Once.Do(func() {
-		val, err = runConstructor(ctor, name, dependencies)
+		val, err := runConstructor(ctor, name, dependencies)
 		if err == nil {
 			contextRegistration.Instance = val
 		}
