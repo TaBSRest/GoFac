@@ -3,10 +3,10 @@
 ## Metadata
 
 - Date: 2026-03-13
-- Owner: TaBSRest
+- Owner: <ypark@tabsrest.com>
 - Superseding: N/A
 - Preceding: N/A
-- Status: Draft
+- Status: Active
 
 ## Brief & Problem Statements
 
@@ -16,17 +16,20 @@ GoLang 1.24 has reached end of support. GoFac currently targets Go 1.22.0 per `g
 
 Each minor version bump is its own PR on `main` (trunk-based development). Downstream consumers are updated in separate PRs after `1.26.0.8.3` is tagged.
 
+This plan follows Go's release policy: each Go major release is supported until there are two newer major releases. Once Go 1.26 is available, Go 1.24 falls out of the supported window.
+
 ## Considerations and Constraints
 
 - Each version bump touches at most 3 files: `go.mod`, `go.sum`, `.github/workflows/go.yml`.
-- All existing tests must pass before each merge.
+- All existing tests and vet checks must pass before each merge.
 - The CI workflow (`.github/workflows/go.yml`) does not currently pin a Go version; each PR introduces or updates the `actions/setup-go` pin.
-- GoFac has no CGo, no Wasm, no `//go:linkname`, no timers, no crypto usage — the vast majority of breaking changes in each release do not apply.
+- GoFac has no CGo, no Wasm, and no `//go:linkname`. It does use `runtime.SetFinalizer` in `pkg/Container/Container.go`, and tests use `math/rand` and `net/http`, so release-note items in those areas still need a quick repo-specific check.
 - Each version gets its own tag (`1.22.0.8.3` through `1.26.0.8.3`) so downstream consumers can pin any intermediate version if needed.
+- Environment prerequisites must remain valid for local maintainers and CI runners as the Go minimum supported platforms move forward.
 
 ## Approach to Problems
 
-For each version: review breaking changes, confirm no GoFac code changes are needed (or make them), bump `go.mod`, run `go mod tidy`, update the CI Go pin, run the full test suite, open PR, merge, tag if required.
+For each version: review breaking changes, confirm no GoFac code changes are needed (or make them), bump `go.mod`, run `go mod tidy`, update the CI Go pin, run `go vet ./...`, run the full test suite, open PR, merge, tag if required.
 
 ## Solution
 
@@ -46,11 +49,13 @@ Stepping through each minor version individually:
 
 - Green Tea GC (enabled by default in Go 1.26) is a binary-level change; downstream callers control it. The library has no influence over it.
 - This plan does not cover updating downstream repos' full test suites — only their GoFac dependency pin.
+- This plan upgrades the module and CI toolchain, but does not by itself guarantee every maintainer machine satisfies the newer Go host OS requirements.
 
 ### Edge Cases
 
-- `go mod tidy` after a version bump may add or remove a `toolchain` line in `go.mod` (expected per Go 1.25's new toolchain line behavior). Commit the diff as-is.
+- `go mod tidy` after a version bump may change the `go.mod` metadata, including whether a `toolchain` line is present. Commit the diff as produced by the target Go version after review.
 - If the CI runner's default Go lags behind the pinned version, the `actions/setup-go` step handles it.
+- Go 1.24 raises the minimum Linux kernel version to 3.2, and Go 1.25 raises the minimum supported macOS version to 12. Confirm local maintainers and CI runners meet those floors before merging.
 
 ## Implementation Steps
 
@@ -74,6 +79,7 @@ No PR needed — tag `main` at the current commit before any changes.
 - [ ] Update `go.mod`: `go 1.22.0` → `go 1.23`.
 - [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
 - [ ] Add `actions/setup-go` step to `.github/workflows/go.yml` with `go-version: "1.23"`.
+- [ ] Run `go vet ./...` locally and confirm no new analyzer findings.
 - [ ] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
 - [ ] Tag `1.23.0.8.3` on the merge commit.
@@ -85,9 +91,11 @@ No PR needed — tag `main` at the current commit before any changes.
 **Files changed:** `go.mod`, `go.sum`, `.github/workflows/go.yml` (3 files)
 
 - [ ] Research Go 1.24 breaking changes (see Appendix). No GoFac code changes required.
+- [ ] Confirm CI runners and active maintainer machines satisfy Go 1.24 host platform requirements.
 - [ ] Update `go.mod`: `go 1.23` → `go 1.24`.
 - [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
 - [ ] Update `.github/workflows/go.yml` Go pin to `"1.24"`.
+- [ ] Run `go vet ./...` locally and confirm no new analyzer findings.
 - [ ] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
 - [ ] Tag `1.24.0.8.3` on the merge commit.
@@ -100,9 +108,11 @@ No PR needed — tag `main` at the current commit before any changes.
 
 - [ ] Research Go 1.25 breaking changes (see Appendix).
 - [ ] Audit error-handling paths for the nil pointer check fix: confirm no code in GoFac dereferences a potentially-nil pointer before an adjacent error check.
+- [ ] Confirm active maintainer machines satisfy Go 1.25's minimum supported macOS version if macOS is used locally.
 - [ ] Update `go.mod`: `go 1.24` → `go 1.25`.
-- [ ] Run `go mod tidy`; commit `go.mod` and `go.sum` (the `toolchain` line behavior changes in 1.25 — commit whatever `tidy` produces).
+- [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
 - [ ] Update `.github/workflows/go.yml` Go pin to `"1.25"`.
+- [ ] Run `go vet ./...` locally and confirm no new analyzer findings, including any new concurrency-related checks.
 - [ ] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
 - [ ] Tag `1.25.0.8.3` on the merge commit.
@@ -114,46 +124,14 @@ No PR needed — tag `main` at the current commit before any changes.
 **Files changed:** `go.mod`, `go.sum`, `.github/workflows/go.yml` (3 files)
 
 - [ ] Research Go 1.26 breaking changes (see Appendix). No GoFac code changes required.
-- [ ] Run `go fix ./...` locally and review any suggested modernizer rewrites before editing.
+- [ ] Optionally run `go fix ./...` locally and review any suggested modernizer rewrites before editing.
 - [ ] Update `go.mod`: `go 1.25` → `go 1.26`.
 - [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
 - [ ] Update `.github/workflows/go.yml` Go pin to `"1.26"`.
+- [ ] Run `go vet ./...` locally and confirm no new analyzer findings.
 - [ ] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
 - [ ] Tag `1.26.0.8.3` on the merge commit.
-
----
-
-### PR 5 — Update MobileBFF to GoFac `1.26.0.8.3`
-
-**Files changed:** `go.mod`, `go.sum` in the MobileBFF repo (2 files)
-
-- [ ] Update `require github.com/TaBSRest/GoFac` to `v1.26.0.8.3`.
-- [ ] Run `go mod tidy`.
-- [ ] Confirm the downstream test suite passes.
-- [ ] Open PR → merge.
-
----
-
-### PR 6 — Update BE to GoFac `1.26.0.8.3`
-
-**Files changed:** `go.mod`, `go.sum` in the BE repo (2 files)
-
-- [ ] Update `require github.com/TaBSRest/GoFac` to `v1.26.0.8.3`.
-- [ ] Run `go mod tidy`.
-- [ ] Confirm the downstream test suite passes.
-- [ ] Open PR → merge.
-
----
-
-### PR 7 — Update WebHook to GoFac `1.26.0.8.3`
-
-**Files changed:** `go.mod`, `go.sum` in the WebHook repo (2 files)
-
-- [ ] Update `require github.com/TaBSRest/GoFac` to `v1.26.0.8.3`.
-- [ ] Run `go mod tidy`.
-- [ ] Confirm the downstream test suite passes.
-- [ ] Open PR → merge.
 
 ---
 
@@ -170,7 +148,7 @@ No PR needed — tag `main` at the current commit before any changes.
 | `time.Timer`/`time.Ticker` channel capacity | Changed from 1 to 0 for modules on `go 1.23+`; polling `len(ch)` breaks. Revert: `GODEBUG=asynctimerchan=1`. | **None** — GoFac uses no timers. |
 | `//go:linkname` restriction | Cannot access internal stdlib symbols without explicit annotation; `-checklinkname=0` disables. | **None** — no `//go:linkname` in GoFac. |
 | `crypto/tls` — 3DES removed from defaults | Revert: `GODEBUG=tls3des=1`. | **None** — no TLS usage. |
-| `net/http` `ServeContent` header stripping | Error responses strip cache/encoding headers. | **None** — no HTTP serving. |
+| `net/http` `ServeContent` header stripping | Error responses strip cache/encoding headers. | **None** — production code does not serve HTTP. Tests only reference `http.Handler` as a type constraint. |
 | `crypto/x509` — `CreateCertificateRequest` signature verification | Now returns error on bad signature. | **None** — no X.509 usage. |
 | New `godebug` directive in `go.mod` | Opt-in; pins GODEBUG settings per module. | **None required.** |
 | `reflect.DeepEqual` — `netip.Addr` | IPv4 vs. IPv4-mapped addresses now distinguished. | **None** — no `netip` usage. |
@@ -189,7 +167,7 @@ No PR needed — tag `main` at the current commit before any changes.
 | `crypto/rand.Read` panics instead of returning error | Previously returned error on failure; now panics. | **None** — no `crypto/rand` usage. |
 | `crypto/rsa` — minimum 1024-bit key | Keys < 1024 bits rejected. | **None** — no RSA usage. |
 | `crypto/x509` — SHA-1 removed | `x509sha1` GODEBUG removed. | **None** — no X.509 usage. |
-| `math/rand.Seed` is a no-op | Top-level `Seed()` silently ignored. Revert: `GODEBUG=randseednop=0`. | **None** — no `math/rand` seeding. |
+| `math/rand.Seed` is a no-op | Top-level `Seed()` silently ignored. Revert: `GODEBUG=randseednop=0`. | **None** — tests use `math/rand`, but do not call `rand.Seed`. |
 | `runtime.SetFinalizer` deprecated | `runtime.SetFinalizer` is deprecated in Go 1.24. `runtime.AddCleanup` (added in Go 1.23) is the recommended alternative. | **Low** — `pkg/Container/Container.go` uses `SetFinalizer`; still works, migration to `AddCleanup` is optional. |
 | `sync.Map` — Swiss Tables / hash trie internals | Performance improvement; public API unchanged. | **None** — GoFac uses `sync.Map` via public API only. |
 | New `tool` directive in `go.mod` | Replaces blank-import `tools.go` pattern. | **None** — GoFac has no `tools.go`. |
@@ -211,11 +189,11 @@ No PR needed — tag `main` at the current commit before any changes.
 | `encoding/json` error text | Internal reimplementation; error wording may differ. | **None** — no `encoding/json` usage in GoFac. |
 | `crypto/elliptic` undocumented methods removed | `Inverse`, `CombinedMult` removed. | **None** — no crypto/elliptic usage. |
 | macOS minimum version raised to macOS 12 | Development/CI constraint only. | **None**. |
-| `toolchain` line no longer auto-added | `go mod tidy` no longer appends `toolchain` pin. | **Low** — expect `go.mod` diff; commit it. |
+| New `go vet` analyzers | Go 1.25 expands vet coverage, including concurrency-focused checks such as `waitgroup`. | **Low** — run `go vet ./...` on each bump because this repo has concurrency-heavy tests. |
 | `testing/synctest` graduates to GA | Old `GOEXPERIMENT=synctest` API still present but removed in 1.26. | **None** — GoFac does not use synctest. |
 | Generic "core types" removed from spec | Spec cleanup; behavior unchanged, error messages improve. | **None**. |
 
-**Verdict:** No code changes required. Audit nil pointer paths; commit expected `go.mod` diff.
+**Verdict:** No code changes required. Audit nil pointer paths and run `go vet ./...` to catch any newly surfaced analyzer findings.
 
 ---
 
@@ -229,7 +207,7 @@ No PR needed — tag `main` at the current commit before any changes.
 | `testing/synctest` old experimental API removed | `GOEXPERIMENT=synctest` variant from Go 1.24 gone. | **None** — GoFac does not use synctest. |
 | `windows/arm` (32-bit) port removed | `GOOS=windows GOARCH=arm` unsupported. | **None**. |
 | Bootstrap requirement raised to Go 1.24.6 | Building the Go toolchain itself requires 1.24.6+. | **None** — toolchain builder concern only. |
-| `go fix` modernizer passes | May suggest or auto-apply safe rewrites. | **Low** — run `go fix ./...`, review output, commit if desired. |
+| `go fix` modernizer passes | May suggest or auto-apply safe rewrites. | **Low** — optional hygiene step; run `go fix ./...`, review output, and commit only if the rewrite is useful. |
 | Self-referential generic constraints | Additive language feature. | **None**. |
 | ELFv1 on ppc64 deprecated | Last release with ELFv1; ELFv2 in 1.27. | **None**. |
 
@@ -258,3 +236,11 @@ N/A — toolchain upgrade with no architectural changes.
 **Disadvantages:** Harder to isolate which version introduced a regression. Skips the incremental safety net.
 
 **Reasons for Rejection:** Stepping through each version is safer and aligns with trunk-based development principles.
+
+### References
+
+- Go release policy: <https://go.dev/doc/devel/release#policy>
+- Go 1.23 release notes: <https://go.dev/doc/go1.23>
+- Go 1.24 release notes: <https://go.dev/doc/go1.24>
+- Go 1.25 release notes: <https://go.dev/doc/go1.25>
+- Go 1.26 release notes: <https://go.dev/doc/go1.26>
