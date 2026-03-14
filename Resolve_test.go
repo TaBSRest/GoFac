@@ -2,8 +2,10 @@ package GoFac_test
 
 import (
 	ctx "context"
+	"runtime"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -910,4 +912,50 @@ func TestResolve_ResolvedInstancesAreDifferent_WhenResolvingPerContextUnderDiffe
 	assert.Nil(err, "Should not have any error!")
 	assert.Equal("IndependentStruct", result2.ReturnNameIndependentStruct(), "Functions should be able to run")
 	assert.NotSame(result1, result2, "They must not be the same!")
+}
+
+func TestResolve_PerContextInstanceIsDestroyedAfterContextIsGarbageCollected(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := ContainerBuilder.New()
+	err := containerBuilder.Register(
+		ss.NewIndependentStruct,
+		RegistrationOptions.As[ss.IIndependentStruct],
+		RegistrationOptions.PerContext,
+	)
+	assert.Nil(err)
+
+	container, err := containerBuilder.Build()
+	assert.Nil(err)
+
+	destroyed := make(chan struct{})
+
+	func() {
+		newContext := container.RegisterContext(ctx.Background())
+
+		result, err := GoFac.Resolve[ss.IIndependentStruct](container, newContext)
+		assert.Nil(err)
+		assert.NotNil(result)
+		assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct())
+
+		// Set a finalizer on the underlying struct to detect when it is garbage collected.
+		runtime.SetFinalizer(result.(*ss.IndependentStruct), func(_ *ss.IndependentStruct) {
+			close(destroyed)
+		})
+	}()
+
+	// Force GC to finalize the goFacUUIDWrapper (deletes the registry entry)
+	// and then the resolved instance itself.
+	runtime.GC()
+	time.Sleep(10 * time.Millisecond)
+	runtime.GC()
+	time.Sleep(10 * time.Millisecond)
+	runtime.GC()
+
+	select {
+	case <-destroyed:
+		// The per-context instance was garbage collected.
+	case <-time.After(1 * time.Second):
+		assert.Fail("Per-context instance was not destroyed after context was garbage collected")
+	}
 }
