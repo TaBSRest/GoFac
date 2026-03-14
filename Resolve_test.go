@@ -944,12 +944,12 @@ func TestResolve_PerContextInstanceIsDestroyedAfterContextIsGarbageCollected(t *
 		})
 	}()
 
-	// Force GC to finalize the goFacUUIDWrapper (deletes the registry entry)
-	// and then the resolved instance itself.
+	// Force garbage collection to test finalizers. This is inherently tricky.
+	// A first GC pass is needed to collect the context wrapper, whose finalizer
+	// removes the instance from the internal registry. A second pass then collects
+	// the instance itself.
 	runtime.GC()
-	time.Sleep(10 * time.Millisecond)
-	runtime.GC()
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond) // Allow time for context wrapper finalizer
 	runtime.GC()
 
 	select {

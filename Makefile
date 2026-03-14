@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 test:
 	set -o pipefail; go test -race ./... 2>&1 | grep -v "no test files"
 
