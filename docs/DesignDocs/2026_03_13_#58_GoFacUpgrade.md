@@ -18,7 +18,6 @@ Each minor version bump is its own PR on `main` (trunk-based development). Downs
 
 ## Considerations and Constraints
 
-- Each PR is one logical unit: ≤ 10 file changes, ≤ 300 lines changed (per trunk-based dev rule in AGENTS.md).
 - Each version bump touches at most 3 files: `go.mod`, `go.sum`, `.github/workflows/go.yml`.
 - All existing tests must pass before each merge.
 - The CI workflow (`.github/workflows/go.yml`) does not currently pin a Go version; each PR introduces or updates the `actions/setup-go` pin.
@@ -38,6 +37,7 @@ GoFac (`github.com/TaBSRest/GoFac`) is a dependency injection container library 
 ### Design Efficacy
 
 Stepping through each minor version individually:
+
 - Isolates which version introduces a regression if tests start failing.
 - Keeps each PR minimal and reviewable.
 - Gives downstream consumers a tagged pin at every Go minor version (`1.22.0.8.3` → `1.26.0.8.3`), so they can adopt at their own pace.
@@ -163,7 +163,7 @@ No PR needed — tag `main` at the current commit before any changes.
 
 #### Go 1.23 Breaking Changes
 
-**Source:** https://go.dev/doc/go1.23
+**Source:** <https://go.dev/doc/go1.23>
 
 | Change | Details | GoFac Impact |
 |--------|---------|--------------|
@@ -182,7 +182,7 @@ No PR needed — tag `main` at the current commit before any changes.
 
 #### Go 1.24 Breaking Changes
 
-**Source:** https://go.dev/doc/go1.24
+**Source:** <https://go.dev/doc/go1.24>
 
 | Change | Details | GoFac Impact |
 |--------|---------|--------------|
@@ -190,7 +190,7 @@ No PR needed — tag `main` at the current commit before any changes.
 | `crypto/rsa` — minimum 1024-bit key | Keys < 1024 bits rejected. | **None** — no RSA usage. |
 | `crypto/x509` — SHA-1 removed | `x509sha1` GODEBUG removed. | **None** — no X.509 usage. |
 | `math/rand.Seed` is a no-op | Top-level `Seed()` silently ignored. Revert: `GODEBUG=randseednop=0`. | **None** — no `math/rand` seeding. |
-| `runtime.SetFinalizer` still works; `runtime.AddCleanup` added | `AddCleanup` is now idiomatic (multiple cleanups, no cycle leaks). | **Low** — `pkg/Container/Container.go` uses `SetFinalizer`; still works, migration to `AddCleanup` is optional. |
+| `runtime.SetFinalizer` deprecated | `runtime.SetFinalizer` is deprecated in Go 1.24. `runtime.AddCleanup` (added in Go 1.23) is the recommended alternative. | **Low** — `pkg/Container/Container.go` uses `SetFinalizer`; still works, migration to `AddCleanup` is optional. |
 | `sync.Map` — Swiss Tables / hash trie internals | Performance improvement; public API unchanged. | **None** — GoFac uses `sync.Map` via public API only. |
 | New `tool` directive in `go.mod` | Replaces blank-import `tools.go` pattern. | **None** — GoFac has no `tools.go`. |
 | `go test -json` includes build events | New `Action: "build"` entries appear in JSON output. | **Low** — verify no CI step parses raw `go test -json` output. |
@@ -202,7 +202,7 @@ No PR needed — tag `main` at the current commit before any changes.
 
 #### Go 1.25 Breaking Changes
 
-**Source:** https://go.dev/doc/go1.25, https://go.dev/blog/go1.25
+**Source:** <https://go.dev/doc/go1.25>, <https://go.dev/blog/go1.25>
 
 | Change | Details | GoFac Impact |
 |--------|---------|--------------|
@@ -221,7 +221,7 @@ No PR needed — tag `main` at the current commit before any changes.
 
 #### Go 1.26 Breaking Changes
 
-**Source:** https://go.dev/doc/go1.26, https://go.dev/blog/go1.26
+**Source:** <https://go.dev/doc/go1.26>, <https://go.dev/blog/go1.26>
 
 | Change | Details | GoFac Impact |
 |--------|---------|--------------|
@@ -249,7 +249,7 @@ N/A — toolchain upgrade with no architectural changes.
 
 **Disadvantages:** Violates the ≤ 10 file / ≤ 300 line trunk-based rule; harder to bisect if a regression appears.
 
-**Reasons for Rejection:** AGENTS.md requires one logical work unit per PR.
+**Reasons for Rejection:** The organization rule states one logical work unit per PR.
 
 #### Skip 1.23 and 1.24, jump from 1.22 directly to 1.25
 
