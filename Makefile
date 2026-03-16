@@ -1,8 +1,7 @@
-runTestEnvironment:
-	docker compose run --rm --build default bash
+SHELL := /bin/bash
 
 test:
-	python3 ./buildscript.py $(ARGS)
+	set -o pipefail; go test -race ./... 2>&1 | grep -v "no test files"
 
 checkCoverage:
 	@echo "Checking the Total Line Coverage..."
