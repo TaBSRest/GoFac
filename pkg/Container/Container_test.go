@@ -84,3 +84,4 @@ func TestGetMetadataFromContext_ReturnsNilAndFalse_IfContextHasNotBeenRegistered
 	assert.Nil(metadata, "Should return nil")
 	assert.False(found, "Should return false")
 }
+
