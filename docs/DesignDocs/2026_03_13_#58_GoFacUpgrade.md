@@ -8,9 +8,17 @@
 - Preceding: N/A
 - Status: Active
 
+## Current State
+
+- This plan was created while GoFac still targeted Go 1.22.0.
+- The repository has since completed the Go 1.23 step.
+- This branch upgrades the codebase and CI workflow to Go 1.24.
+- The `runtime.SetFinalizer` to `runtime.AddCleanup` migration is intentionally deferred to the next PR so the Go 1.24 bump remains isolated.
+- Local validation for the Go 1.24 branch state passed with `go test ./...`, `go vet ./...`, `go fix ./...`, and `make checkCoverage`.
+
 ## Brief & Problem Statements
 
-GoLang 1.24 has reached end of support. GoFac currently targets Go 1.22.0 per `go.mod`. To stay on a supported toolchain and unblock downstream consumers (MobileBFF, BE, WebHook), the upgrade path is:
+GoLang 1.24 has reached end of support. When this plan was created, GoFac targeted Go 1.22.0 per `go.mod`. To stay on a supported toolchain and unblock downstream consumers (MobileBFF, BE, WebHook), the upgrade path is:
 
 1.22 (tag `1.22.0.8.3`) → 1.23 (tag `1.23.0.8.3`) → 1.24 (tag `1.24.0.8.3`) → 1.25 (tag `1.25.0.8.3`) → 1.26 (tag `1.26.0.8.3`)
 
@@ -22,7 +30,7 @@ This plan follows Go's release policy: each Go major release is supported until 
 
 - Each version bump touches at most 3 files: `go.mod`, `go.sum`, `.github/workflows/go.yml`.
 - All existing tests and vet checks must pass before each merge.
-- The CI workflow (`.github/workflows/go.yml`) does not currently pin a Go version; each PR introduces or updates the `actions/setup-go` pin.
+- The CI workflow (`.github/workflows/go.yml`) now pins a Go version with `actions/setup-go`, and the Go 1.24 step also requires updating GitHub Action majors that were still tied to the deprecated Node 20 runtime.
 - GoFac has no CGo, no Wasm, and no `//go:linkname`. It does use `runtime.SetFinalizer` in `pkg/Container/Container.go`, and tests use `math/rand` and `net/http`, so release-note items in those areas still need a quick repo-specific check.
 - Each version gets its own tag (`1.22.0.8.3` through `1.26.0.8.3`) so downstream consumers can pin any intermediate version if needed.
 - Environment prerequisites must remain valid for local maintainers and CI runners as the Go minimum supported platforms move forward.
@@ -35,7 +43,7 @@ For each version: review breaking changes, confirm no GoFac code changes are nee
 
 ### Architectural Overview
 
-GoFac (`github.com/TaBSRest/GoFac`) is a dependency injection container library with two direct dependencies: `github.com/google/uuid v1.6.0` and `github.com/stretchr/testify v1.9.0`. No CGo, no Wasm, no generated code. The upgrade is entirely a toolchain and module file change.
+GoFac (`github.com/TaBSRest/GoFac`) is a dependency injection container library with two direct dependencies: `github.com/google/uuid v1.6.0` and `github.com/stretchr/testify v1.11.1`. No CGo, no Wasm, no generated code. The upgrade is entirely a toolchain and module file change.
 
 ### Design Efficacy
 
@@ -56,10 +64,11 @@ Stepping through each minor version individually:
 - `go mod tidy` after a version bump may change the `go.mod` metadata, including whether a `toolchain` line is present. Commit the diff as produced by the target Go version after review.
 - If the CI runner's default Go lags behind the pinned version, the `actions/setup-go` step handles it.
 - Go 1.24 raises the minimum Linux kernel version to 3.2, and Go 1.25 raises the minimum supported macOS version to 12. Confirm local maintainers and CI runners meet those floors before merging.
+- `coverage/LineCoverage.txt` is a tracked baseline, not a direct source of truth. Because the repo also has `make adjustCoverage`, the baseline file can drift away from the measured total and should not be treated as proof of a live regression without repeated reruns of `make checkCoverage`.
 
 ## Implementation Steps
 
-Each step below is one PR. Branch naming: `feat/{codex}/#{ticket}-{description}`. PR title: `feat(GoFac): #{ticket} Upgrade Go to <version>`.
+Each step below is one PR. Follow `AGENTS.md` for the exact branch and PR title format required at the time the PR is opened.
 
 ---
 
@@ -94,7 +103,7 @@ No PR needed — tag `main` at the current commit before any changes.
 - [ ] Confirm CI runners and active maintainer machines satisfy Go 1.24 host platform requirements.
 - [ ] Update `go.mod`: `go 1.23` → `go 1.24`.
 - [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
-- [ ] Update `.github/workflows/go.yml` Go pin to `"1.24"`.
+- [ ] Update `.github/workflows/go.yml` Go pin to `"1.24"` and bump GitHub Action majors that are still on the deprecated Node 20 runtime.
 - [ ] Run `go vet ./...` locally and confirm no new analyzer findings.
 - [ ] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
@@ -167,14 +176,14 @@ No PR needed — tag `main` at the current commit before any changes.
 | `crypto/rand.Read` panics instead of returning error | Previously returned error on failure; now panics. | **None** — no `crypto/rand` usage. |
 | `crypto/rsa` — minimum 1024-bit key | Keys < 1024 bits rejected. | **None** — no RSA usage. |
 | `crypto/x509` — SHA-1 removed | `x509sha1` GODEBUG removed. | **None** — no X.509 usage. |
-| `math/rand.Seed` is a no-op | Top-level `Seed()` silently ignored. Revert: `GODEBUG=randseednop=0`. | **None** — tests use `math/rand`, but do not call `rand.Seed`. |
+| `math/rand.Seed` is a no-op | Top-level `Seed()` silently ignored. Revert: `GODEBUG=randseednop=0`. | **None** — the deterministic Go 1.24 branch no longer relies on `math/rand` for coverage-driving test behavior. |
 | `runtime.SetFinalizer` deprecated | `runtime.SetFinalizer` is deprecated in Go 1.24. `runtime.AddCleanup` (added in Go 1.23) is the recommended alternative. | **Low** — `pkg/Container/Container.go` uses `SetFinalizer`; still works, migration to `AddCleanup` is optional. |
 | `sync.Map` — Swiss Tables / hash trie internals | Performance improvement; public API unchanged. | **None** — GoFac uses `sync.Map` via public API only. |
 | New `tool` directive in `go.mod` | Replaces blank-import `tools.go` pattern. | **None** — GoFac has no `tools.go`. |
 | `go test -json` includes build events | New `Action: "build"` entries appear in JSON output. | **Low** — verify no CI step parses raw `go test -json` output. |
 | Linux kernel minimum raised to 3.2 | Affects CI runners (all modern runners satisfy this). | **None** — verify runner OS. |
 
-**Verdict:** No code changes required. Optionally migrate `SetFinalizer` → `AddCleanup` in a future PR.
+**Verdict:** No production code changes are required for the Go 1.24 bump. The `SetFinalizer` → `AddCleanup` migration is intentionally deferred to the next PR.
 
 ---
 
