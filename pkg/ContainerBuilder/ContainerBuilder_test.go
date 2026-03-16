@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/TaBSRest/GoFac"
 	i "github.com/TaBSRest/GoFac/interfaces"
 	cb "github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
-	"github.com/TaBSRest/GoFac"
 	"github.com/TaBSRest/GoFac/pkg/Options"
 	ss "github.com/TaBSRest/GoFac/tests/SampleStructs"
 )
@@ -83,3 +83,24 @@ func TestGetRegistrations_ReturnedValuesAreImmutable(t *testing.T) {
 	assert.Equal(2, len(newCopy))
 }
 
+func TestBuild_FailsWhenSingletonDependsOnPerScope(t *testing.T) {
+	assert := assert.New(t)
+
+	containerBuilder := cb.New()
+	err := containerBuilder.Register(
+		ss.NewIndependentStruct,
+		Options.PerScope,
+		Options.As[ss.IIndependentStruct],
+	)
+	assert.Nil(err)
+
+	err = containerBuilder.Register(
+		ss.NewStructRelyingOnIndependentStruct,
+		Options.AsSingleton,
+		Options.As[ss.IStructRelyingOnIndependentStruct],
+	)
+	assert.Nil(err)
+
+	_, err = containerBuilder.Build()
+	assert.NotNil(err, "Build should fail when singleton depends on PerScope dependency")
+}

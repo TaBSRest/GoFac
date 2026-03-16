@@ -15,18 +15,18 @@ import (
 )
 
 type ContainerBuilder struct {
-	built bool
+	built              bool
 	namedRegistrations map[string]*r.Registration
-	grouped map[string]*g.Group
-	cache map[reflect.Type][]*r.Registration
+	grouped            map[string]*g.Group
+	cache              map[reflect.Type][]*r.Registration
 }
 
 func New() *ContainerBuilder {
 	return &ContainerBuilder{
-		built: false,
+		built:              false,
 		namedRegistrations: make(map[string]*r.Registration),
-		grouped: make(map[string]*g.Group),
-		cache: make(map[reflect.Type][]*r.Registration),
+		grouped:            make(map[string]*g.Group),
+		cache:              make(map[reflect.Type][]*r.Registration),
 	}
 }
 
@@ -54,8 +54,8 @@ func (cb *ContainerBuilder) Register(
 		groupName := groupInfo.Name
 		if cb.grouped[groupName] == nil {
 			cb.grouped[groupName] = &g.Group{
-				Registrations : make([]*r.Registration, 0),
-				GroupInfo: groupInfo,
+				Registrations: make([]*r.Registration, 0),
+				GroupInfo:     groupInfo,
 			}
 		} else {
 			if cb.grouped[groupName].GroupType != groupInfo.GroupType {
@@ -116,6 +116,10 @@ func (cb *ContainerBuilder) Build() (*gf.Container, error) {
 		Options.AsSingleton,
 	)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := cb.analyzeDependencies(); err != nil {
 		return nil, err
 	}
 
