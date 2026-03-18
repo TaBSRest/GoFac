@@ -75,9 +75,9 @@ func (c *Container) RegisterContext(context ctx.Context) ctx.Context {
 	registry.Store(uuidString, metadata)
 
 	uuidWrapper := &goFacUUIDWrapper{contextID: uuidString}
-	runtime.SetFinalizer(uuidWrapper, func(f *goFacUUIDWrapper) {
-		registry.Delete(f.contextID)
-	})
+	runtime.AddCleanup(uuidWrapper, func(contextID string) {
+		registry.Delete(contextID)
+	}, uuidString)
 
 	context = ctx.WithValue(context, gofac_UUID_WRAPPER_KEY, uuidWrapper)
 

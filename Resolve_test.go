@@ -938,18 +938,18 @@ func TestResolve_PerContextInstanceIsDestroyedAfterContextIsGarbageCollected(t *
 		assert.NotNil(result)
 		assert.Equal("IndependentStruct", result.ReturnNameIndependentStruct())
 
-		// Set a finalizer on the underlying struct to detect when it is garbage collected.
-		runtime.SetFinalizer(result.(*ss.IndependentStruct), func(_ *ss.IndependentStruct) {
+		// Attach a cleanup to the underlying struct to detect when it is garbage collected.
+		runtime.AddCleanup(result.(*ss.IndependentStruct), func(destroyed chan struct{}) {
 			close(destroyed)
-		})
+		}, destroyed)
 	}()
 
-	// Force garbage collection to test finalizers. This is inherently tricky.
-	// A first GC pass is needed to collect the context wrapper, whose finalizer
+	// Force garbage collection to test cleanups. This is inherently tricky.
+	// A first GC pass is needed to collect the context wrapper, whose cleanup
 	// removes the instance from the internal registry. A second pass then collects
 	// the instance itself.
 	runtime.GC()
-	time.Sleep(50 * time.Millisecond) // Allow time for context wrapper finalizer
+	time.Sleep(50 * time.Millisecond) // Allow time for context wrapper cleanup.
 	runtime.GC()
 
 	select {

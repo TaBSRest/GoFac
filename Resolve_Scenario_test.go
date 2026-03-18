@@ -3,16 +3,13 @@ package GoFac_test
 import (
 	ctx "context"
 	"fmt"
-	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/TaBSRest/GoFac"
 	i "github.com/TaBSRest/GoFac/interfaces"
-	"github.com/TaBSRest/GoFac/internal/BuildOption"
 	"github.com/TaBSRest/GoFac/pkg/ContainerBuilder"
 	BuildOptions "github.com/TaBSRest/GoFac/pkg/Options/Build"
 	RegistrationOptions "github.com/TaBSRest/GoFac/pkg/Options/Registration"
@@ -33,6 +30,19 @@ var (
 type scenario struct {
 	name       string
 	runResolve func(t *testing.T, container i.Container, scenarioID int)
+}
+
+func buildScenarioExecutionPlan(totalRuns int, scenarioCount int) []int {
+	if totalRuns <= 0 || scenarioCount <= 0 {
+		return nil
+	}
+
+	plan := make([]int, totalRuns)
+	for i := 0; i < totalRuns; i++ {
+		plan[i] = i % scenarioCount
+	}
+
+	return plan
 }
 
 func setupContainer(t *testing.T) {
@@ -161,19 +171,7 @@ func setupContainer(t *testing.T) {
 			return
 		}
 
-		var buildOptionFunction func(*BuildOption.BuildOption)
-		if rand.Intn(2) == 0 {
-			buildOptionFunction = BuildOptions.RegisterSameContextConcurrently
-		}
-
-		var buildContainer i.Container
-		var buildError error
-
-		if buildOptionFunction != nil {
-			buildContainer, buildError = containerBuilder.Build(buildOptionFunction)
-		} else {
-			buildContainer, buildError = containerBuilder.Build()
-		}
+		buildContainer, buildError := containerBuilder.Build(BuildOptions.RegisterSameContextConcurrently)
 
 		container = buildContainer
 		setupError = buildError
@@ -341,8 +339,8 @@ func initializeScenarios(t *testing.T) {
 		{
 			name: "Resolve Singleton with Specific PerContext Dependency",
 			runResolve: func(t *testing.T, c i.Container, scenarioID int) {
-				contextValue1 := fmt.Sprintf("s%d_cValA_gr%d", scenarioID, rand.Int())
-				contextValue2 := fmt.Sprintf("s%d_cValB_gr%d", scenarioID, rand.Int())
+				contextValue1 := fmt.Sprintf("s%d_cValA", scenarioID)
+				contextValue2 := fmt.Sprintf("s%d_cValB", scenarioID)
 				registeredContext1 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("cKey1"), contextValue1))
 				registeredContext2 := c.RegisterContext(ctx.WithValue(ctx.Background(), token("cKey2"), contextValue2))
 
@@ -371,8 +369,6 @@ func initializeScenarios(t *testing.T) {
 }
 
 func TestResolve_DoesNotOccurRaceCondition(t *testing.T) {
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	initializeScenarios(t)
 
 	if len(scenarios) == 0 {
@@ -386,31 +382,32 @@ func TestResolve_DoesNotOccurRaceCondition(t *testing.T) {
 	}
 
 	var waitGroupForNecessaryTests sync.WaitGroup
+	initialScenarioPlan := buildScenarioExecutionPlan(len(scenarios), len(scenarios))
 
-	for i := 0; i < len(scenarios); i++ {
+	for scenarioID, scenarioIndex := range initialScenarioPlan {
 		waitGroupForNecessaryTests.Add(1)
-		go func(goroutineID int) {
+		go func(scenarioID int, scenarioIndex int) {
 			defer waitGroupForNecessaryTests.Done()
 
-			selectedScenario := scenarios[i]
+			selectedScenario := scenarios[scenarioIndex]
 
-			selectedScenario.runResolve(t, container, goroutineID)
-		}(i)
+			selectedScenario.runResolve(t, container, scenarioID)
+		}(scenarioID, scenarioIndex)
 	}
 	waitGroupForNecessaryTests.Wait()
 
 	var waitGroup sync.WaitGroup
+	stressScenarioPlan := buildScenarioExecutionPlan(num_GOROUTINES, len(scenarios))
 	waitGroup.Add(num_GOROUTINES)
 
-	for i := 0; i < num_GOROUTINES; i++ {
-		go func(goroutineID int) {
+	for goroutineID, scenarioIndex := range stressScenarioPlan {
+		go func(goroutineID int, scenarioIndex int) {
 			defer waitGroup.Done()
 
-			scenarioIndex := rand.Intn(len(scenarios))
 			selectedScenario := scenarios[scenarioIndex]
 
 			selectedScenario.runResolve(t, container, goroutineID)
-		}(i)
+		}(goroutineID, scenarioIndex)
 	}
 
 	waitGroup.Wait()
