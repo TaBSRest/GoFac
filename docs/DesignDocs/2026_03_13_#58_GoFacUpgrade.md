@@ -115,14 +115,14 @@ No PR needed — tag `main` at the current commit before any changes.
 
 **Files changed:** `go.mod`, `go.sum`, `.github/workflows/go.yml` (3 files)
 
-- [ ] Research Go 1.25 breaking changes (see Appendix).
-- [ ] Audit error-handling paths for the nil pointer check fix: confirm no code in GoFac dereferences a potentially-nil pointer before an adjacent error check.
-- [ ] Confirm active maintainer machines satisfy Go 1.25's minimum supported macOS version if macOS is used locally.
-- [ ] Update `go.mod`: `go 1.24` → `go 1.25`.
-- [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
-- [ ] Update `.github/workflows/go.yml` Go pin to `"1.25"`.
-- [ ] Run `go vet ./...` locally and confirm no new analyzer findings, including any new concurrency-related checks.
-- [ ] Run `make checkCoverage` locally and confirm all tests pass.
+- [x] Research Go 1.25 breaking changes (see Appendix).
+- [x] Audit error-handling paths for the nil pointer check fix: confirm no code in GoFac dereferences a potentially-nil pointer before an adjacent error check.
+- [x] Confirm active maintainer machines satisfy Go 1.25's minimum supported macOS version if macOS is used locally.
+- [x] Update `go.mod`: `go 1.24` → `go 1.25`.
+- [x] Run `go mod tidy`; commit `go.mod` and `go.sum`.
+- [x] Update `.github/workflows/go.yml` Go pin to `"1.25"`.
+- [x] Run `go vet ./...` locally and confirm no new analyzer findings, including any new concurrency-related checks.
+- [x] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
 - [ ] Tag `1.25.0.8.3` on the merge commit.
 
