@@ -38,7 +38,7 @@ func buildScenarioExecutionPlan(totalRuns int, scenarioCount int) []int {
 	}
 
 	plan := make([]int, totalRuns)
-	for i := 0; i < totalRuns; i++ {
+	for i := range totalRuns {
 		plan[i] = i % scenarioCount
 	}
 
