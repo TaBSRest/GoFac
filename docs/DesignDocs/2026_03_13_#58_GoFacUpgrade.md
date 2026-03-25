@@ -11,10 +11,10 @@
 ## Current State
 
 - This plan was created while GoFac still targeted Go 1.22.0.
-- The repository has since completed the Go 1.23 step.
-- This branch upgrades the codebase and CI workflow to Go 1.24.
-- The `runtime.SetFinalizer` to `runtime.AddCleanup` migration is intentionally deferred to the next PR so the Go 1.24 bump remains isolated.
-- Local validation for the Go 1.24 branch state passed with `go test ./...`, `go vet ./...`, `go fix ./...`, and `make checkCoverage`.
+- The repository has since completed the Go 1.23, Go 1.24, and Go 1.25 steps.
+- The `runtime.SetFinalizer` to `runtime.AddCleanup` migration was completed in a follow-up `#58` work unit after the Go 1.24 bump.
+- This branch upgrades the codebase and CI workflow to Go 1.26.
+- Local validation for the Go 1.26 branch state passed with `go test ./...`, `go test -race ./...`, `go vet ./...`, `go fix ./...`, and `make checkCoverage`.
 
 ## Brief & Problem Statements
 
@@ -31,7 +31,7 @@ This plan follows Go's release policy: each Go major release is supported until 
 - Each version bump touches at most 3 files: `go.mod`, `go.sum`, `.github/workflows/go.yml`.
 - All existing tests and vet checks must pass before each merge.
 - The CI workflow (`.github/workflows/go.yml`) now pins a Go version with `actions/setup-go`, and the Go 1.24 step also requires updating GitHub Action majors that were still tied to the deprecated Node 20 runtime.
-- GoFac has no CGo, no Wasm, and no `//go:linkname`. It does use `runtime.SetFinalizer` in `pkg/Container/Container.go`, and tests use `math/rand` and `net/http`, so release-note items in those areas still need a quick repo-specific check.
+- GoFac has no CGo, no Wasm, and no `//go:linkname`. It uses `runtime.AddCleanup` for per-context cleanup, and tests use `math/rand` and `net/http`, so release-note items in those areas still need a quick repo-specific check.
 - Each version gets its own tag (`1.22.0.8.3` through `1.26.0.8.3`) so downstream consumers can pin any intermediate version if needed.
 - Environment prerequisites must remain valid for local maintainers and CI runners as the Go minimum supported platforms move forward.
 
@@ -132,13 +132,13 @@ No PR needed — tag `main` at the current commit before any changes.
 
 **Files changed:** `go.mod`, `go.sum`, `.github/workflows/go.yml` (3 files)
 
-- [ ] Research Go 1.26 breaking changes (see Appendix). No GoFac code changes required.
-- [ ] Optionally run `go fix ./...` locally and review any suggested modernizer rewrites before editing.
-- [ ] Update `go.mod`: `go 1.25` → `go 1.26`.
-- [ ] Run `go mod tidy`; commit `go.mod` and `go.sum`.
-- [ ] Update `.github/workflows/go.yml` Go pin to `"1.26"`.
-- [ ] Run `go vet ./...` locally and confirm no new analyzer findings.
-- [ ] Run `make checkCoverage` locally and confirm all tests pass.
+- [x] Research Go 1.26 breaking changes (see Appendix). No GoFac code changes required.
+- [x] Optionally run `go fix ./...` locally and review any suggested modernizer rewrites before editing.
+- [x] Update `go.mod`: `go 1.25` → `go 1.26`.
+- [x] Run `go mod tidy`; commit `go.mod` and `go.sum`.
+- [x] Update `.github/workflows/go.yml` Go pin to `"1.26"`.
+- [x] Run `go vet ./...` locally and confirm no new analyzer findings.
+- [x] Run `make checkCoverage` locally and confirm all tests pass.
 - [ ] Open PR → merge to `main`.
 - [ ] Tag `1.26.0.8.3` on the merge commit.
 

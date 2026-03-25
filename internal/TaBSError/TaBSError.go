@@ -79,8 +79,8 @@ func (e *TaBSError) Error() string {
 		for _, child := range e.children {
 			sb.WriteString("Inner error: ")
 			if child != nil {
-				lines := strings.Split(child.Error(), "\n")
-				for _, line := range lines {
+				lines := strings.SplitSeq(child.Error(), "\n")
+				for line := range lines {
 					sb.WriteString(line)
 					sb.WriteString("\n\t")
 				}
